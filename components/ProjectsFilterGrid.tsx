@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ProjectCard } from "@/components/ProjectCard";
 import type { Dictionary, Locale } from "@/lib/i18n";
@@ -17,7 +16,6 @@ interface ProjectsFilterGridProps {
 
 export function ProjectsFilterGrid({ dict, locale, projects }: ProjectsFilterGridProps) {
   const [filter, setFilter] = useState<ProjectFilter>("all");
-  const router = useRouter();
 
   const filters: Array<{ key: ProjectFilter; label: string; count: number }> = [
     { key: "all", label: dict.projects.tabs.all, count: projects.length },
@@ -38,48 +36,27 @@ export function ProjectsFilterGrid({ dict, locale, projects }: ProjectsFilterGri
   return (
     <section className="mt-4">
       <div className="glass-panel rounded-[30px] px-4 py-4 md:px-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
-            {filters.map((item) => {
-              const active = filter === item.key;
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => setFilter(item.key)}
-                  className="rounded-full px-4 py-2 text-sm font-medium transition"
-                  style={{
-                    border: active ? "1px solid var(--text-main)" : "1px solid var(--line-muted)",
-                    background: active ? "var(--text-main)" : "var(--button-bg)",
-                    color: active ? "var(--page-bg)" : "var(--text-muted)",
-                    boxShadow: active ? "0 8px 20px rgba(20,24,35,0.12)" : "none",
-                  }}
-                >
-                  {item.label}
-                  <span style={{ marginLeft: 6, opacity: active ? 0.7 : 0.58 }}>{item.count}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (window.history.length > 1) {
-                router.back();
-                return;
-              }
-              router.push(`/${locale}`);
-            }}
-            className="rounded-full px-4 py-2 text-sm font-medium transition"
-            style={{
-              border: "1px solid var(--line-muted)",
-              background: "var(--button-bg)",
-              color: "var(--text-main)",
-            }}
-          >
-            ← {locale === "zh" ? "返回" : "Back"}
-          </button>
+        <div className="flex flex-wrap gap-2">
+          {filters.map((item) => {
+            const active = filter === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setFilter(item.key)}
+                className="rounded-full px-4 py-2 text-sm font-medium transition"
+                style={{
+                  border: active ? "1px solid var(--text-main)" : "1px solid var(--line-muted)",
+                  background: active ? "var(--text-main)" : "var(--button-bg)",
+                  color: active ? "var(--page-bg)" : "var(--text-muted)",
+                  boxShadow: active ? "0 8px 20px rgba(20,24,35,0.12)" : "none",
+                }}
+              >
+                {item.label}
+                <span style={{ marginLeft: 6, opacity: active ? 0.7 : 0.58 }}>{item.count}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -37,6 +37,18 @@ export default async function ProjectsPage({ params }: ProjectsPageProps) {
         <SiteHeader
           locale={typedLocale}
           brand="tppc_linksc(和小冋)"
+          center={
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => { if (typeof window !== "undefined" && window.history.length > 1) { window.history.back(); } }}
+                className="text-sm text-[var(--text-muted)] transition hover:text-[var(--text-main)]"
+              >
+                ← {typedLocale === "zh" ? "返回" : "Back"}
+              </button>
+              <span className="text-sm font-semibold text-[var(--text-main)] md:text-base">{dict.projects.heading}</span>
+            </div>
+          }
         />
 
         <ProjectsFilterGrid dict={dict} locale={typedLocale} projects={projects} />
