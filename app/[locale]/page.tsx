@@ -46,12 +46,6 @@ export default async function LocalePage({ params }: LocalePageProps) {
         <SiteHeader
           locale={typedLocale}
           brand="tppc_linksc(和小冋)"
-          nav={[
-            { label: dict.nav.projects, href: "#projects" },
-            { label: typedLocale === "zh" ? "项目路线" : "Roadmap", href: "#route" },
-            { label: dict.nav.about, href: "#about" },
-            { label: dict.nav.contact, href: "#contact" },
-          ]}
         />
 
         <section className="glass-panel hero-fusion-panel relative mt-4 min-h-[520px] overflow-hidden rounded-[30px] px-5 py-6 md:min-h-[520px] md:px-8 md:py-8 xl:min-h-[560px]">

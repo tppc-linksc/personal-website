@@ -64,6 +64,8 @@ export function SiteHeader({ locale, brand = "tppc_linksc", center, nav }: SiteH
         </div>
       </div>
 
+      {center && <div className="mt-2 text-center lg:hidden">{center}</div>}
+
       {nav && menuOpen && (
         <nav className="mt-3 flex flex-col gap-1 border-t border-[var(--line-muted)] pt-3 lg:hidden">
           {nav.map((item) => (
