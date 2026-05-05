@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { BackLink } from "@/components/BackLink";
 import { ProjectsFilterGrid } from "@/components/ProjectsFilterGrid";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getDictionary, isLocale, type Locale } from "@/lib/i18n";
@@ -38,12 +37,7 @@ export default async function ProjectsPage({ params }: ProjectsPageProps) {
         <SiteHeader
           locale={typedLocale}
           brand="tppc_linksc(和小冋)"
-          center={
-            <div className="flex items-center gap-3">
-              <BackLink locale={typedLocale} />
-              <span className="text-sm font-semibold text-[var(--text-main)] md:text-base">{dict.projects.heading}</span>
-            </div>
-          }
+          center={<span className="text-sm font-semibold text-[var(--text-main)] md:text-base">{dict.projects.heading}</span>}
         />
 
         <ProjectsFilterGrid dict={dict} locale={typedLocale} projects={projects} />

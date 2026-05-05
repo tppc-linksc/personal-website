@@ -36,7 +36,18 @@ export function ProjectsFilterGrid({ dict, locale, projects }: ProjectsFilterGri
   return (
     <section className="mt-4">
       <div className="glass-panel rounded-[30px] px-4 py-4 md:px-5">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (window.history.length > 1) {
+                window.history.back();
+              }
+            }}
+            className="rounded-full border border-[var(--line-muted)] bg-[var(--button-bg)] px-4 py-2 text-sm font-medium text-[var(--text-main)] transition hover:border-[var(--text-muted)]"
+          >
+            ← {locale === "zh" ? "返回" : "Back"}
+          </button>
           {filters.map((item) => {
             const active = filter === item.key;
             return (
