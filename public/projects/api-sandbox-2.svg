@@ -1,0 +1,12 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="28" fill="#070A12"/>
+  <rect x="46" y="46" width="1108" height="628" rx="20" fill="#0D162A" stroke="#2A3E64"/>
+  <rect x="92" y="126" width="492" height="464" rx="16" fill="#101C34"/>
+  <rect x="614" y="126" width="494" height="464" rx="16" fill="#0F1A31"/>
+  <rect x="128" y="170" width="420" height="32" rx="10" fill="#6EE7F9" fill-opacity="0.24"/>
+  <rect x="650" y="170" width="430" height="32" rx="10" fill="#60A5FA" fill-opacity="0.24"/>
+  <rect x="128" y="228" width="360" height="14" rx="7" fill="#BFD0F8" fill-opacity="0.28"/>
+  <rect x="650" y="228" width="390" height="14" rx="7" fill="#BFD0F8" fill-opacity="0.28"/>
+  <circle cx="896" cy="470" r="76" fill="#4CE1FF" fill-opacity="0.13"/>
+  <text x="94" y="92" fill="#DDE9FF" font-size="22" font-family="Inter, Arial">API Sandbox 2</text>
+</svg>

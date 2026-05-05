@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(grep *)",
+      "Bash(git *)",
+      "Bash(npm uninstall *)"
+    ]
+  }
+}

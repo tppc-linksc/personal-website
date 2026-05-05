@@ -1,0 +1,14 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="28" fill="#060911"/>
+  <rect x="44" y="44" width="1112" height="632" rx="20" fill="#0E1529" stroke="#26385E"/>
+  <rect x="90" y="120" width="240" height="478" rx="16" fill="#101A30"/>
+  <rect x="356" y="120" width="758" height="478" rx="16" fill="#0B1326"/>
+  <line x1="426" y1="176" x2="426" y2="546" stroke="#4B7BE8" stroke-width="3"/>
+  <circle cx="426" cy="222" r="10" fill="#7EE3FF"/>
+  <circle cx="426" cy="316" r="10" fill="#7EE3FF"/>
+  <circle cx="426" cy="410" r="10" fill="#7EE3FF"/>
+  <rect x="456" y="200" width="530" height="44" rx="12" fill="#152242"/>
+  <rect x="456" y="294" width="470" height="44" rx="12" fill="#14203D"/>
+  <rect x="456" y="388" width="500" height="44" rx="12" fill="#152242"/>
+  <text x="92" y="88" fill="#DDE9FF" font-size="22" font-family="Inter, Arial">DevLog Chronicle</text>
+</svg>

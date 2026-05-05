@@ -1,0 +1,12 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="28" fill="#070913"/>
+  <rect x="38" y="38" width="1124" height="644" rx="22" fill="#0F1730" stroke="#2A3A73"/>
+  <rect x="70" y="84" width="220" height="552" rx="14" fill="#0A1020"/>
+  <rect x="314" y="84" width="516" height="552" rx="14" fill="#091326"/>
+  <rect x="854" y="84" width="276" height="552" rx="14" fill="#0A1020"/>
+  <rect x="340" y="120" width="280" height="18" rx="9" fill="#7EE3FF" fill-opacity="0.35"/>
+  <rect x="340" y="154" width="420" height="12" rx="6" fill="#B9C4E8" fill-opacity="0.28"/>
+  <circle cx="980" cy="242" r="68" fill="#4CE1FF" fill-opacity="0.18"/>
+  <circle cx="1010" cy="452" r="56" fill="#8E7BFF" fill-opacity="0.16"/>
+  <text x="72" y="58" fill="#DDE9FF" font-size="22" font-family="Inter, Arial">Vibe Workspace</text>
+</svg>

@@ -1,0 +1,13 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="28" fill="#060810"/>
+  <rect x="44" y="44" width="1112" height="632" rx="20" fill="#0E1528" stroke="#26375E"/>
+  <rect x="90" y="120" width="1020" height="478" rx="16" fill="#0B1325"/>
+  <line x1="90" y1="280" x2="1110" y2="280" stroke="#273A65"/>
+  <line x1="90" y1="438" x2="1110" y2="438" stroke="#273A65"/>
+  <line x1="430" y1="120" x2="430" y2="598" stroke="#273A65"/>
+  <line x1="770" y1="120" x2="770" y2="598" stroke="#273A65"/>
+  <circle cx="292" cy="222" r="34" fill="#22D3EE" fill-opacity="0.35"/>
+  <circle cx="552" cy="360" r="42" fill="#60A5FA" fill-opacity="0.28"/>
+  <circle cx="922" cy="506" r="38" fill="#A78BFA" fill-opacity="0.25"/>
+  <text x="92" y="90" fill="#DDE9FF" font-size="22" font-family="Inter, Arial">Signal Grid</text>
+</svg>

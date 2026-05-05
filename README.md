@@ -1,36 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Personal Vibe Coding Portfolio
 
-## Getting Started
+Next.js 16 + TypeScript + Tailwind + Framer Motion + React Three Fiber + CloudBase.
 
-First, run the development server:
+## 1) Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
+- Frontend: `http://localhost:3000` (redirects to `/zh`)
+- Studio login: `http://localhost:3000/studio/login`
+- Studio CMS: `http://localhost:3000/studio`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 2) CloudBase setup (no-redeploy content updates)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The site reads project data from CloudBase at runtime.
+When CloudBase is unavailable, it falls back to local seed data.
 
-## Learn More
+Copy `.env.example` to `.env.local`:
 
-To learn more about Next.js, take a look at the following resources:
+- `CLOUDBASE_ENV_ID`
+- `CLOUDBASE_API_KEY` **or** (`CLOUDBASE_SECRET_ID` + `CLOUDBASE_SECRET_KEY`)
+- studio admin credential: choose one
+  - `STUDIO_ADMIN_TOKEN` (plain, compatible mode)
+  - `STUDIO_ADMIN_TOKEN_HASH` (recommended)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Optional:
+- `CLOUDBASE_PROJECTS_COLLECTION` (default `portfolio_projects`)
+- `CLOUDBASE_COVER_DIR` (default `portfolio-covers`)
+- `CLOUDBASE_MESSAGES_COLLECTION` (default `project_messages`)
+- `STUDIO_SESSION_SECRET` (recommended, independent signing secret)
+- `STUDIO_SESSION_TTL_SECONDS` (default 259200, i.e. 3 days)
+- `STUDIO_OWNER_NAME` (default `Author`, used for owner-labeled replies)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Generate `STUDIO_ADMIN_TOKEN_HASH` from your memorable plain token:
 
-## Deploy on Vercel
+```bash
+npm run studio:hash -- "your-plain-token"
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Paste the output (format `sha256:<salt>:<hash>`) into `.env.local`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 3) Studio CMS (single-page management)
+
+`/studio` is now a 3-stage CMS:
+
+1. `基础信息`:
+- slug, project status, bilingual title/tagline
+
+2. `内容信息`:
+- bilingual summary/description/design/architecture
+- tech tags
+
+3. `发布信息`:
+- cover path + image upload to CloudBase storage
+- github/live/video links
+- eta/progress
+- `保存草稿` / `发布上线`
+
+### Publish model
+
+- `draft`: hidden from frontend
+- `published`: visible on frontend
+
+The public pages only show `published` projects.
+
+### Studio security
+
+- Route protected by `proxy.ts`: unauthenticated requests to `/studio` are redirected to `/studio/login`
+- `/studio/login` verifies admin token (plain or hash mode) and issues an httpOnly signed session cookie
+- Write APIs (`/api/projects`, `/api/studio/upload`) require valid session/token
+
+## 4) API and runtime behavior
+
+- `GET /api/projects`:
+  - public list (published only)
+- `GET /api/projects?scope=all`:
+  - full list (requires studio auth)
+- `POST /api/projects`:
+  - seed / upsert / delete (requires studio auth)
+- `POST /api/studio/upload`:
+  - upload cover image to CloudBase storage (requires studio auth)
+
+After write operations, paths are revalidated to refresh frontend content.
+
+## 5) Data model and sources
+
+Schema:
+- `lib/projects.ts` (`ProjectItem`, bilingual fields, visibility)
+
+CloudBase adapter:
+- `lib/cloudbase-projects.ts`
+
+Runtime source + fallback:
+- `lib/projects-source.ts`
+
+Studio auth:
+- `lib/studio-auth.ts`
+
+Messages:
+- `lib/messages.ts`
+- `lib/cloudbase-messages.ts`
+- `lib/messages-source.ts`
+- `app/api/projects/[slug]/messages/route.ts`
+
+## 6) Build checks
+
+```bash
+npm run lint
+npm run build
+```
