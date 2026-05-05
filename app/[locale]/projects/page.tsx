@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { BackLink } from "@/components/BackLink";
 import { ProjectsFilterGrid } from "@/components/ProjectsFilterGrid";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getDictionary, isLocale, type Locale } from "@/lib/i18n";
@@ -39,13 +40,7 @@ export default async function ProjectsPage({ params }: ProjectsPageProps) {
           brand="tppc_linksc(和小冋)"
           center={
             <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => { if (typeof window !== "undefined" && window.history.length > 1) { window.history.back(); } }}
-                className="text-sm text-[var(--text-muted)] transition hover:text-[var(--text-main)]"
-              >
-                ← {typedLocale === "zh" ? "返回" : "Back"}
-              </button>
+              <BackLink locale={typedLocale} />
               <span className="text-sm font-semibold text-[var(--text-main)] md:text-base">{dict.projects.heading}</span>
             </div>
           }
