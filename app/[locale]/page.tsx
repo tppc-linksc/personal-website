@@ -2,9 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { InteractiveHeroScene } from "@/components/InteractiveHeroScene";
-import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { ProjectCard } from "@/components/ProjectCard";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { SiteHeader } from "@/components/SiteHeader";
 import { VisitCounter } from "@/components/VisitCounter";
 import { getDictionary, isLocale, type Locale } from "@/lib/i18n";
 import { projectRouteDate, selectFeaturedProjects, sortProjects } from "@/lib/project-selection";
@@ -44,33 +43,16 @@ export default async function LocalePage({ params }: LocalePageProps) {
   return (
     <main className={`min-h-screen px-3 py-4 text-[var(--text-main)] md:px-6 ${typedLocale === "zh" ? "locale-zh" : "locale-en"}`}>
       <div className="mx-auto max-w-7xl">
-        <header className="glass-panel sticky top-3 z-30 overflow-hidden rounded-[30px] px-5 py-3 md:px-6">
-          <div className="flex items-center justify-between gap-3">
-            <Link href={`/${typedLocale}`} className="text-lg font-semibold text-[var(--text-main)]">
-              tppc_linksc(和小冋)
-            </Link>
-
-            <nav className="hidden items-center gap-8 text-sm text-[var(--text-muted)] lg:flex">
-              <a href="#projects" className="transition hover:text-[var(--text-main)]">
-                {dict.nav.projects}
-              </a>
-              <a href="#route" className="transition hover:text-[var(--text-main)]">
-                {typedLocale === "zh" ? "项目路线" : "Roadmap"}
-              </a>
-              <a href="#about" className="transition hover:text-[var(--text-main)]">
-                {dict.nav.about}
-              </a>
-              <a href="#contact" className="transition hover:text-[var(--text-main)]">
-                {dict.nav.contact}
-              </a>
-            </nav>
-
-            <div className="flex items-center gap-2">
-              <LanguageSwitch locale={typedLocale} />
-              <ThemeToggle />
-            </div>
-          </div>
-        </header>
+        <SiteHeader
+          locale={typedLocale}
+          brand="tppc_linksc(和小冋)"
+          nav={[
+            { label: dict.nav.projects, href: "#projects" },
+            { label: typedLocale === "zh" ? "项目路线" : "Roadmap", href: "#route" },
+            { label: dict.nav.about, href: "#about" },
+            { label: dict.nav.contact, href: "#contact" },
+          ]}
+        />
 
         <section className="glass-panel hero-fusion-panel relative mt-4 min-h-[520px] overflow-hidden rounded-[30px] px-5 py-6 md:min-h-[520px] md:px-8 md:py-8 xl:min-h-[560px]">
           <InteractiveHeroScene />
@@ -84,7 +66,7 @@ export default async function LocalePage({ params }: LocalePageProps) {
               <div className="mt-7 flex flex-wrap gap-3">
                 <a
                   href="#projects"
-                  className="rounded-full border border-[var(--line-muted)] bg-[var(--button-bg)] px-6 py-2.5 text-sm font-medium text-[var(--text-main)] transition hover:border-[var(--text-muted)]"
+                  className="rounded-full bg-[var(--text-main)] px-6 py-2.5 text-sm font-medium text-[var(--page-bg)] transition hover:opacity-90"
                 >
                   {dict.hero.ctaPrimary}
                 </a>
@@ -92,7 +74,7 @@ export default async function LocalePage({ params }: LocalePageProps) {
                   href="https://github.com/tppc_linksc"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-full border border-[var(--line-muted)] bg-[var(--button-bg)] px-6 py-2.5 text-sm font-medium text-[var(--text-muted)] transition hover:text-[var(--text-main)]"
+                  className="rounded-full border border-[var(--line-muted)] bg-[var(--button-bg)] px-6 py-2.5 text-sm font-medium text-[var(--text-muted)] transition hover:border-[var(--text-muted)] hover:text-[var(--text-main)]"
                 >
                   {dict.hero.ctaSecondary}
                 </a>

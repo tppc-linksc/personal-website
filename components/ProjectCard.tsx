@@ -35,10 +35,9 @@ export function ProjectCard({ project, locale, dict }: ProjectCardProps) {
             {(project.stars ?? 0) > 0 && <span className="project-stars">{project.stars}</span>}
           </div>
           <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{t(project.tagline, locale)}</p>
-          <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">{t(project.summary, locale)}</p>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {project.tech.slice(0, 4).map((tech) => (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {project.tech.slice(0, 3).map((tech) => (
               <span key={tech} className="project-tech">
                 {tech}
               </span>

@@ -8,7 +8,7 @@
   --panel-soft: rgba(255, 255, 255, 0.32);
   --text-main: #14161b;
   --text-muted: #545962;
-  --text-soft: #6c7078;
+  --text-soft: #5a5f67;
   --line: rgba(255, 255, 255, 0.78);
   --line-muted: rgba(34, 38, 46, 0.1);
   --shadow: 0 18px 56px rgba(20, 24, 35, 0.13);
@@ -19,19 +19,19 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --page-bg: #151518;
-  --panel-bg: rgba(41, 42, 47, 0.48);
-  --panel-strong: rgba(56, 57, 63, 0.7);
-  --panel-soft: rgba(255, 255, 255, 0.06);
+  --page-bg: #111114;
+  --panel-bg: rgba(38, 39, 44, 0.62);
+  --panel-strong: rgba(48, 49, 55, 0.78);
+  --panel-soft: rgba(255, 255, 255, 0.05);
   --text-main: #f0f1f3;
   --text-muted: #b7bac0;
-  --text-soft: #969aa3;
-  --line: rgba(255, 255, 255, 0.16);
-  --line-muted: rgba(255, 255, 255, 0.1);
-  --shadow: 0 18px 56px rgba(0, 0, 0, 0.32);
-  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.22);
-  --button-bg: rgba(255, 255, 255, 0.08);
-  --chip-bg: rgba(255, 255, 255, 0.08);
+  --text-soft: #8a8f98;
+  --line: rgba(255, 255, 255, 0.14);
+  --line-muted: rgba(255, 255, 255, 0.08);
+  --shadow: 0 18px 56px rgba(0, 0, 0, 0.4);
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.28);
+  --button-bg: rgba(255, 255, 255, 0.07);
+  --chip-bg: rgba(255, 255, 255, 0.06);
 }
 
 * {
@@ -46,7 +46,7 @@ body {
   margin: 0;
   background: var(--page-bg);
   color: var(--text-main);
-  font-family: "Inter", "Avenir Next", "SF Pro Text", "Segoe UI", sans-serif;
+  font-family: var(--font-inter), "Avenir Next", "SF Pro Text", "Segoe UI", sans-serif;
 }
 
 body::before {
@@ -84,11 +84,11 @@ body::after {
 }
 
 .locale-zh {
-  font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", "Inter", sans-serif;
+  font-family: var(--font-inter), "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
 }
 
 .locale-en {
-  font-family: "Inter", "Avenir Next", "SF Pro Display", "Segoe UI", sans-serif;
+  font-family: var(--font-inter), "Avenir Next", "SF Pro Display", "Segoe UI", sans-serif;
 }
 
 .glass-panel {
@@ -587,8 +587,71 @@ body::after {
   outline: none;
 }
 
+.cta-btn-primary {
+  border-radius: 999px;
+  background: var(--text-main);
+  padding: 0.625rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--page-bg);
+  transition: opacity 180ms ease;
+}
+
+.cta-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.cta-btn-secondary {
+  border-radius: 999px;
+  border: 1px solid var(--line-muted);
+  background: var(--button-bg);
+  padding: 0.625rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: border-color 180ms ease, color 180ms ease, background 180ms ease;
+}
+
+.cta-btn-secondary:hover {
+  border-color: var(--text-muted);
+  color: var(--text-main);
+  background: color-mix(in srgb, var(--button-bg) 80%, var(--text-main));
+}
+
 .form-field::placeholder {
   color: var(--text-soft);
+}
+
+.detail-section {
+  padding-top: 1.75rem;
+  margin-top: 1.75rem;
+  border-top: 1px solid var(--line-muted);
+}
+
+.detail-section:first-child {
+  padding-top: 0;
+  margin-top: 0;
+  border-top: 0;
+}
+
+.detail-section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.detail-info-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .detail-info-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
