@@ -37,7 +37,6 @@ export default async function ProjectsPage({ params }: ProjectsPageProps) {
         <SiteHeader
           locale={typedLocale}
           brand="tppc_linksc(和小冋)"
-          center={<span className="text-sm font-semibold text-[var(--text-main)] md:text-base">{dict.projects.heading}</span>}
         />
 
         <ProjectsFilterGrid dict={dict} locale={typedLocale} projects={projects} />
