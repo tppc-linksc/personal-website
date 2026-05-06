@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { mkdirSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
+import { isStudioAuthorized, STUDIO_SESSION_COOKIE } from "@/lib/studio-auth";
 
 function uploadDir(): string {
   const dir = join(process.cwd(), "public", "uploads");
@@ -8,7 +9,18 @@ function uploadDir(): string {
   return dir;
 }
 
+async function ensureAdmin(request: NextRequest): Promise<boolean> {
+  return isStudioAuthorized({
+    tokenHeader: request.headers.get("x-studio-token"),
+    sessionCookie: request.cookies.get(STUDIO_SESSION_COOKIE)?.value,
+  });
+}
+
 export async function POST(request: NextRequest) {
+  if (!(await ensureAdmin(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
