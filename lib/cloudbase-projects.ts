@@ -97,9 +97,7 @@ function normalizeProject(value: unknown): ProjectItem | null {
   };
 }
 
-const getApp = getCloudbaseApp;
-const getDb = getCloudbaseDb;
-const isConfigured = isCloudbaseConfigured;
+
 
 async function resolveCoverTempUrls(projects: ProjectItem[]): Promise<ProjectItem[]> {
   const cloudCovers = projects.filter((item) => item.cover.startsWith("cloud://"));
@@ -107,7 +105,7 @@ async function resolveCoverTempUrls(projects: ProjectItem[]): Promise<ProjectIte
     return projects;
   }
 
-  const app = getApp();
+  const app = getCloudbaseApp();
   const fileList = cloudCovers.map((item) => item.cover.replace(/^cloud:\/\//, "")).filter(Boolean);
   const fileUrlRes = await app.getTempFileURL({ fileList });
   const urlMap = new Map<string, string>();
@@ -132,12 +130,12 @@ async function resolveCoverTempUrls(projects: ProjectItem[]): Promise<ProjectIte
 }
 
 export async function listProjectsFromCloudbase(): Promise<ProjectItem[] | null> {
-  if (!isConfigured()) {
+  if (!isCloudbaseConfigured()) {
     return null;
   }
 
   try {
-    const db = getDb();
+    const db = getCloudbaseDb();
     const result = await db.collection(COLLECTION).limit(1000).get();
     const normalized = result.data.map(normalizeProject).filter((item): item is ProjectItem => item !== null);
     normalized.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
@@ -151,12 +149,12 @@ export async function listProjectsFromCloudbase(): Promise<ProjectItem[] | null>
 }
 
 export async function getProjectFromCloudbase(slug: string): Promise<ProjectItem | null> {
-  if (!isConfigured()) {
+  if (!isCloudbaseConfigured()) {
     return null;
   }
 
   try {
-    const db = getDb();
+    const db = getCloudbaseDb();
     const result = await db.collection(COLLECTION).doc(slug).get();
     if (!result.data || result.data.length === 0) {
       return null;
@@ -176,7 +174,7 @@ export async function getProjectFromCloudbase(slug: string): Promise<ProjectItem
 }
 
 export async function upsertProjectToCloudbase(project: ProjectItem): Promise<void> {
-  const db = getDb();
+  const db = getCloudbaseDb();
   const now = Date.now();
   const safe = normalizeProject({ ...project, updatedAt: now });
   if (!safe) {
@@ -194,12 +192,12 @@ export async function upsertProjectToCloudbase(project: ProjectItem): Promise<vo
 }
 
 export async function removeProjectFromCloudbase(slug: string): Promise<void> {
-  const db = getDb();
+  const db = getCloudbaseDb();
   await db.collection(COLLECTION).doc(slug).remove();
 }
 
 export async function seedCloudbaseWithLocalProjects(): Promise<void> {
-  const db = getDb();
+  const db = getCloudbaseDb();
   const seeds = cloneLocalProjects();
 
   for (const project of seeds) {
@@ -213,7 +211,7 @@ export async function uploadCoverToCloudbase(params: {
   fileName: string;
   fileContent: Buffer;
 }): Promise<{ fileID: string; tempUrl: string; cover: string }> {
-  const app = getApp();
+  const app = getCloudbaseApp();
   const safeFileName = params.fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
   const cloudPath = `${COVER_DIR}/${Date.now()}-${safeFileName}`;
   const uploadRes = await app.uploadFile({
@@ -233,5 +231,5 @@ export async function uploadCoverToCloudbase(params: {
 }
 
 export function usingCloudbase(): boolean {
-  return isConfigured();
+  return isCloudbaseConfigured();
 }
