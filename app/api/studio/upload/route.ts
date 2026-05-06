@@ -1,53 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isCloudbaseEnabled } from "@/lib/projects-source";
-import { uploadCoverToCloudbase } from "@/lib/cloudbase-projects";
-import { isStudioAuthorized, STUDIO_SESSION_COOKIE } from "@/lib/studio-auth";
+import { mkdirSync, writeFileSync, existsSync } from "fs";
+import { join } from "path";
 
-function unauthorized() {
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+function uploadDir(): string {
+  const dir = join(process.cwd(), "public", "uploads");
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  return dir;
 }
 
 export async function POST(request: NextRequest) {
-  const authorized = await isStudioAuthorized({
-    tokenHeader: request.headers.get("x-studio-token"),
-    sessionCookie: request.cookies.get(STUDIO_SESSION_COOKIE)?.value,
-  });
-
-  if (!authorized) {
-    return unauthorized();
-  }
-
-  if (!isCloudbaseEnabled()) {
-    return NextResponse.json({ error: "CloudBase is not configured" }, { status: 400 });
-  }
-
   try {
     const formData = await request.formData();
-    const file = formData.get("file");
-
-    if (!(file instanceof File)) {
-      return NextResponse.json({ error: "Missing file" }, { status: 400 });
+    const file = formData.get("file") as File | null;
+    if (!file) {
+      return NextResponse.json({ error: "未提供文件" }, { status: 400 });
     }
 
-    if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 });
-    }
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+    const fileName = `${Date.now()}-${safeName}`;
+    const filePath = join(uploadDir(), fileName);
 
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 400 });
-    }
+    writeFileSync(filePath, buffer);
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const result = await uploadCoverToCloudbase({
-      fileName: file.name,
-      fileContent: buffer,
-    });
-
-    return NextResponse.json(result);
+    const cover = `/uploads/${fileName}`;
+    return NextResponse.json({ cover, ok: true });
   } catch (error) {
-    console.error("POST /api/studio/upload failed", error);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    console.error("上传失败", error);
+    return NextResponse.json({ error: "上传失败" }, { status: 500 });
   }
 }

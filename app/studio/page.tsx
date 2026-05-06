@@ -43,7 +43,6 @@ type StudioTab = "basic" | "content" | "publish";
 type VisibilityFilter = "all" | "draft" | "published";
 
 export default function StudioPage() {
-  const [cloudbaseEnabled, setCloudbaseEnabled] = useState(false);
   const [studioAuthorized, setStudioAuthorized] = useState(false);
   const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [selectedSlug, setSelectedSlug] = useState<string>("");
@@ -69,7 +68,6 @@ export default function StudioPage() {
       const res = await fetch("/api/projects?scope=all", { cache: "no-store" });
       const json = (await res.json()) as {
         projects?: ProjectItem[];
-        cloudbaseEnabled?: boolean;
         studioAuthorized?: boolean;
         error?: string;
       };
@@ -78,7 +76,6 @@ export default function StudioPage() {
       }
 
       const list = json.projects ?? [];
-      setCloudbaseEnabled(Boolean(json.cloudbaseEnabled));
       setStudioAuthorized(Boolean(json.studioAuthorized));
       setProjects(list);
 
@@ -223,7 +220,6 @@ export default function StudioPage() {
           </div>
 
           <div className="mt-3 flex flex-wrap gap-3 text-xs text-zinc-400">
-            <div>CloudBase：{cloudbaseEnabled ? "已配置" : "未配置（当前仅本地兜底）"}</div>
             <div>Studio 会话：{studioAuthorized ? "已授权" : "未授权"}</div>
           </div>
           {message && <div className="mt-2 text-sm text-cyan-200">{message}</div>}
@@ -493,7 +489,7 @@ export default function StudioPage() {
                   </label>
 
                   <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">上传封面图（CloudBase）</div>
+                    <div className="mb-1 text-zinc-300">上传封面图</div>
                     <input
                       type="file"
                       accept="image/*"

@@ -7,7 +7,7 @@
 - **框架**: Next.js 16 (App Router)
 - **语言**: TypeScript
 - **样式**: Tailwind CSS
-- **数据库**: 腾讯云开发 CloudBase
+- **存储**: 本地 JSON 文件
 - **部署**: Vercel / 自托管
 
 ## 功能特点
@@ -54,51 +54,18 @@ cp .env.example .env.local
 
 编辑 `.env.local`，配置以下变量：
 
-#### 必需配置
-
-```env
-# 腾讯云开发环境 ID
-CLOUDBASE_ENV_ID=your-env-id
-
-# 认证方式（二选一）
-# 方式 1: API Key（简单）
-CLOUDBASE_API_KEY=your-api-key
-
-# 方式 2: Secret ID + Secret Key（推荐）
-CLOUDBASE_SECRET_ID=your-secret-id
-CLOUDBASE_SECRET_KEY=your-secret-key
-```
-
-#### Studio CMS 配置
+### 必需配置
 
 ```env
 # 管理员认证（二选一）
 # 方式 1: 明文 Token（简单）
-STUDIO_ADMIN_TOKEN=your-plain-token
+STUDIO_ADMIN_TOKEN=
 
 # 方式 2: 哈希 Token（推荐，更安全）
 STUDIO_ADMIN_TOKEN_HASH=sha256:salt:hash
 
 # 会话密钥（推荐）
-STUDIO_SESSION_SECRET=your-session-secret
-
-# 会话有效期（秒，默认 3 天）
-STUDIO_SESSION_TTL_SECONDS=259200
-
-# 管理员名称（用于留言标识）
-STUDIO_OWNER_NAME=Author
-```
-
-#### 可选配置
-
-```env
-# 数据集合名称
-CLOUDBASE_PROJECTS_COLLECTION=portfolio_projects
-CLOUDBASE_COVER_DIR=portfolio-covers
-CLOUDBASE_MESSAGES_COLLECTION=project_messages
-
-# GitHub Stars 缓存时间（毫秒）
-GITHUB_STARS_CACHE_TTL_MS=3600000
+STUDIO_SESSION_SECRET=
 ```
 
 ### 3. 生成管理员 Token 哈希
@@ -160,13 +127,10 @@ personal-website/
 ├── lib/                          # 工具库
 │   ├── projects.ts               # 项目数据模型
 │   ├── projects-source.ts        # 项目数据源
-│   ├── cloudbase-projects.ts     # CloudBase 项目适配器
-│   ├── cloudbase-messages.ts     # CloudBase 留言适配器
-│   ├── cloudbase-metrics.ts      # CloudBase 统计适配器
-│   ├── cloudbase.ts              # CloudBase 客户端
 │   ├── messages.ts               # 留言数据模型
 │   ├── messages-source.ts        # 留言数据源
 │   ├── i18n.ts                   # 国际化配置
+│   ├── site-content.ts           # 网站内容配置
 │   ├── github-stars.ts           # GitHub Stars 获取
 │   ├── project-selection.ts      # 项目筛选排序
 │   └── studio-auth.ts            # Studio 认证
@@ -202,11 +166,7 @@ personal-website/
 
 ### 3. 项目数据源
 
-项目数据支持多种来源：
-1. **CloudBase**（优先）: 运行时从云端读取
-2. **本地数据**（回退）: CloudBase 不可用时使用本地种子数据
-
-数据源逻辑在 `lib/projects-source.ts` 中实现。
+项目数据存储在本地 TypeScript 文件中（`lib/projects.ts`），无需外部数据库。留言和访问统计存储为 JSON 文件（`data/` 目录）。
 
 ### 4. Studio CMS
 
@@ -284,36 +244,25 @@ npm run studio:hash -- "your-token"
 
 | 变量名 | 必需 | 说明 | 默认值 |
 |--------|------|------|--------|
-| `CLOUDBASE_ENV_ID` | 是 | 腾讯云开发环境 ID | - |
-| `CLOUDBASE_API_KEY` | 否 | API Key 认证 | - |
-| `CLOUDBASE_SECRET_ID` | 否 | Secret ID 认证 | - |
-| `CLOUDBASE_SECRET_KEY` | 否 | Secret Key 认证 | - |
 | `STUDIO_ADMIN_TOKEN` | 否 | 管理员明文 Token | - |
 | `STUDIO_ADMIN_TOKEN_HASH` | 否 | 管理员哈希 Token | - |
 | `STUDIO_SESSION_SECRET` | 否 | 会话签名密钥 | - |
 | `STUDIO_SESSION_TTL_SECONDS` | 否 | 会话有效期（秒） | 259200 |
 | `STUDIO_OWNER_NAME` | 否 | 管理员名称 | Author |
-| `CLOUDBASE_PROJECTS_COLLECTION` | 否 | 项目集合名称 | portfolio_projects |
-| `CLOUDBASE_COVER_DIR` | 否 | 封面存储目录 | portfolio-covers |
-| `CLOUDBASE_MESSAGES_COLLECTION` | 否 | 留言集合名称 | project_messages |
 
-## 数据清除
+## 数据存储
 
-### CloudBase 控制台
-1. 登录 [腾讯云控制台](https://console.cloud.tencent.com/tcb)
-2. 进入云开发环境 → 数据库
-3. 删除以下集合：
-   - `portfolio_projects` - 项目数据
-   - `portfolio_metrics` - 访问统计
-   - `project_messages` - 留言数据
+项目采用纯本地存储，不依赖任何外部数据库：
 
-### API 方式
-```bash
-# 删除单个项目
-curl -X POST http://localhost:3000/api/projects \
-  -H "Content-Type: application/json" \
-  -d '{"action": "delete", "slug": "项目slug"}'
-```
+| 数据类型 | 存储方式 | 文件位置 |
+|---------|---------|---------|
+| 项目数据 | TypeScript 文件 | `lib/projects.ts` |
+| 网站内容 | localStorage | 浏览器本地 |
+| 留言数据 | JSON 文件 | `data/messages.json` |
+| 访问统计 | JSON 文件 | `data/visits.json` |
+| 上传图片 | 文件系统 | `public/uploads/` |
+
+数据可随时备份，只需复制 `lib/projects.ts` 和 `data/` 目录即可。
 
 ## 路线图
 

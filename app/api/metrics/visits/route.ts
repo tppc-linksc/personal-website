@@ -1,38 +1,38 @@
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { join } from "path";
 import { NextResponse } from "next/server";
-import { getSiteVisits, incrementSiteVisits } from "@/lib/cloudbase-metrics";
 
-export const dynamic = "force-dynamic";
+const DATA_FILE = join(process.cwd(), "data", "visits.json");
+
+function readVisits(): { visits: number } {
+  try {
+    if (existsSync(DATA_FILE)) {
+      return JSON.parse(readFileSync(DATA_FILE, "utf-8"));
+    }
+  } catch { /* ignore */ }
+  return { visits: 0 };
+}
+
+function writeVisits(data: { visits: number }): void {
+  const dir = join(process.cwd(), "data");
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  writeFileSync(DATA_FILE, JSON.stringify(data), "utf-8");
+}
 
 export async function GET() {
-  try {
-    const visits = await getSiteVisits();
-    return NextResponse.json(
-      { visits, enabled: visits !== null },
-      {
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      },
-    );
-  } catch (error) {
-    console.error("GET /api/metrics/visits failed", error);
-    return NextResponse.json({ visits: null, enabled: false }, { status: 200 });
-  }
+  const data = readVisits();
+  return NextResponse.json(
+    { visits: data.visits, enabled: true },
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }
 
 export async function POST() {
-  try {
-    const visits = await incrementSiteVisits();
-    return NextResponse.json(
-      { visits, enabled: visits !== null },
-      {
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      },
-    );
-  } catch (error) {
-    console.error("POST /api/metrics/visits failed", error);
-    return NextResponse.json({ visits: null, enabled: false }, { status: 200 });
-  }
+  const data = readVisits();
+  data.visits += 1;
+  writeVisits(data);
+  return NextResponse.json(
+    { visits: data.visits, enabled: true },
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }

@@ -1,31 +1,32 @@
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { join } from "path";
 import { buildMessageTree, normalizeParentId, type MessageItem, type MessageNode, type MessageStatus } from "@/lib/messages";
-import {
-  createMessageInCloudbase,
-  listMessagesFromCloudbase,
-  updateMessageStatusInCloudbase,
-  usingCloudbaseMessages,
-} from "@/lib/cloudbase-messages";
 
-const localMessages: MessageItem[] = [];
+const DATA_FILE = join(process.cwd(), "data", "messages.json");
 
-function clone(items: MessageItem[]): MessageItem[] {
-  return items.map((item) => ({ ...item }));
+function ensureDataDir(): void {
+  const dir = join(process.cwd(), "data");
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+}
+
+function loadMessages(): MessageItem[] {
+  try {
+    if (existsSync(DATA_FILE)) {
+      return JSON.parse(readFileSync(DATA_FILE, "utf-8")) as MessageItem[];
+    }
+  } catch { /* ignore */ }
+  return [];
+}
+
+function saveMessages(messages: MessageItem[]): void {
+  ensureDataDir();
+  writeFileSync(DATA_FILE, JSON.stringify(messages, null, 2), "utf-8");
 }
 
 export async function getMessagesByProject(projectSlug: string, options?: { includeHidden?: boolean }): Promise<MessageItem[]> {
   const includeHidden = Boolean(options?.includeHidden);
-
-  try {
-    const cloud = await listMessagesFromCloudbase(projectSlug);
-    if (cloud) {
-      return includeHidden ? cloud : cloud.filter((item) => item.status === "approved");
-    }
-  } catch (error) {
-    console.error("[messages-source] list cloudbase failed", error);
-  }
-
-  const local = clone(localMessages.filter((item) => item.projectSlug === projectSlug));
-  return includeHidden ? local : local.filter((item) => item.status === "approved");
+  const rows = loadMessages().filter((item) => item.projectSlug === projectSlug);
+  return includeHidden ? rows : rows.filter((item) => item.status === "approved");
 }
 
 export async function getMessageTreeByProject(projectSlug: string): Promise<MessageNode[]> {
@@ -47,6 +48,8 @@ export async function createMessage(input: {
   content: string;
   status?: MessageStatus;
 }): Promise<MessageItem> {
+  const messages = loadMessages();
+
   const message: MessageItem = {
     id: input.id,
     projectSlug: input.projectSlug,
@@ -58,23 +61,17 @@ export async function createMessage(input: {
     createdAt: Date.now(),
   };
 
-  if (usingCloudbaseMessages()) {
-    await createMessageInCloudbase(message);
-  } else {
-    localMessages.push(message);
-  }
+  messages.push(message);
+  saveMessages(messages);
 
   return message;
 }
 
 export async function moderateMessage(id: string, status: MessageStatus): Promise<void> {
-  if (usingCloudbaseMessages()) {
-    await updateMessageStatusInCloudbase(id, status);
-    return;
-  }
-
-  const index = localMessages.findIndex((item) => item.id === id);
+  const messages = loadMessages();
+  const index = messages.findIndex((item) => item.id === id);
   if (index >= 0) {
-    localMessages[index] = { ...localMessages[index], status };
+    messages[index] = { ...messages[index], status };
+    saveMessages(messages);
   }
 }
