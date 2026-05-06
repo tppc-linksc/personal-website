@@ -43,7 +43,6 @@ type StudioTab = "basic" | "content" | "publish";
 type VisibilityFilter = "all" | "draft" | "published";
 
 export default function StudioPage() {
-  const [token, setToken] = useState("");
   const [cloudbaseEnabled, setCloudbaseEnabled] = useState(false);
   const [studioAuthorized, setStudioAuthorized] = useState(false);
   const [projects, setProjects] = useState<ProjectItem[]>([]);
@@ -118,7 +117,6 @@ export default function StudioPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { "x-studio-token": token } : {}),
         },
         body: JSON.stringify(payload),
       });
@@ -145,7 +143,6 @@ export default function StudioPage() {
 
       const res = await fetch("/api/studio/upload", {
         method: "POST",
-        headers: token ? { "x-studio-token": token } : undefined,
         body: formData,
       });
       const json = (await res.json()) as { cover?: string; tempUrl?: string; error?: string };
@@ -203,13 +200,7 @@ export default function StudioPage() {
             </button>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-[1fr,auto,auto]">
-            <input
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="可选：手动输入 STUDIO_ADMIN_TOKEN（调试用）"
-              className="rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-sm outline-none ring-cyan-300/60 focus:ring"
-            />
+          <div className="mt-4 flex flex-wrap gap-3">
             <button
               type="button"
               onClick={() => void postAction({ action: "seed" }, "示例数据已初始化")}
@@ -520,7 +511,7 @@ export default function StudioPage() {
 
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">GitHub 地址</div>
+                    <div className="mb-1 text-zinc-300">GitHub 地址（可空）</div>
                     <input
                       value={draft.github}
                       onChange={(e) => applyField("github", e.target.value)}

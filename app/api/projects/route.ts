@@ -56,7 +56,7 @@ function normalizeProject(value: unknown): ProjectItem | null {
   const slug = typeof record.slug === "string" ? record.slug.trim() : "";
   const github = typeof record.github === "string" ? record.github.trim() : "";
 
-  if (!slug || !github) {
+  if (!slug) {
     return null;
   }
 

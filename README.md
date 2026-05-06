@@ -1,114 +1,340 @@
-# Personal Vibe Coding Portfolio
+# 个人作品集网站
 
-Next.js 16 + TypeScript + Tailwind + Framer Motion + React Three Fiber + CloudBase.
+一个现代化的个人作品集网站，展示项目、技能和创意作品。采用 AI 驱动的开发方式，快速将想法变成现实。
 
-## 1) Run locally
+## 技术栈
+
+- **框架**: Next.js 16 (App Router)
+- **语言**: TypeScript
+- **样式**: Tailwind CSS
+- **数据库**: 腾讯云开发 CloudBase
+- **部署**: Vercel / 自托管
+
+## 功能特点
+
+### 前台展示
+- 响应式设计，支持移动端和桌面端
+- 中英文双语支持
+- 深色/浅色主题切换
+- 项目展示卡片
+- 项目详情页
+- 留言板功能
+- 访问量统计
+- 骨架屏加载动画
+
+### 后台管理 (Studio CMS)
+- 项目管理（创建、编辑、删除）
+- 三阶段编辑流程：基础信息 → 内容信息 → 发布信息
+- 封面图片上传
+- 草稿/发布状态管理
+- 安全的登录认证
+
+### API 接口
+- `GET /api/projects` - 获取项目列表
+- `POST /api/projects` - 创建/更新/删除项目
+- `POST /api/studio/upload` - 上传封面图片
+- `GET /api/projects/[slug]/messages` - 获取留言
+- `POST /api/projects/[slug]/messages` - 提交留言
+
+## 快速开始
+
+### 1. 安装依赖
 
 ```bash
 npm install
-npm run dev
 ```
 
-Open:
-- Frontend: `http://localhost:3000` (redirects to `/zh`)
-- Studio login: `http://localhost:3000/studio/login`
-- Studio CMS: `http://localhost:3000/studio`
+### 2. 配置环境变量
 
-## 2) CloudBase setup (no-redeploy content updates)
+复制 `.env.example` 为 `.env.local`：
 
-The site reads project data from CloudBase at runtime.
-When CloudBase is unavailable, it falls back to local seed data.
+```bash
+cp .env.example .env.local
+```
 
-Copy `.env.example` to `.env.local`:
+编辑 `.env.local`，配置以下变量：
 
-- `CLOUDBASE_ENV_ID`
-- `CLOUDBASE_API_KEY` **or** (`CLOUDBASE_SECRET_ID` + `CLOUDBASE_SECRET_KEY`)
-- studio admin credential: choose one
-  - `STUDIO_ADMIN_TOKEN` (plain, compatible mode)
-  - `STUDIO_ADMIN_TOKEN_HASH` (recommended)
+#### 必需配置
 
-Optional:
-- `CLOUDBASE_PROJECTS_COLLECTION` (default `portfolio_projects`)
-- `CLOUDBASE_COVER_DIR` (default `portfolio-covers`)
-- `CLOUDBASE_MESSAGES_COLLECTION` (default `project_messages`)
-- `STUDIO_SESSION_SECRET` (recommended, independent signing secret)
-- `STUDIO_SESSION_TTL_SECONDS` (default 259200, i.e. 3 days)
-- `STUDIO_OWNER_NAME` (default `Author`, used for owner-labeled replies)
+```env
+# 腾讯云开发环境 ID
+CLOUDBASE_ENV_ID=your-env-id
 
-Generate `STUDIO_ADMIN_TOKEN_HASH` from your memorable plain token:
+# 认证方式（二选一）
+# 方式 1: API Key（简单）
+CLOUDBASE_API_KEY=your-api-key
+
+# 方式 2: Secret ID + Secret Key（推荐）
+CLOUDBASE_SECRET_ID=your-secret-id
+CLOUDBASE_SECRET_KEY=your-secret-key
+```
+
+#### Studio CMS 配置
+
+```env
+# 管理员认证（二选一）
+# 方式 1: 明文 Token（简单）
+STUDIO_ADMIN_TOKEN=your-plain-token
+
+# 方式 2: 哈希 Token（推荐，更安全）
+STUDIO_ADMIN_TOKEN_HASH=sha256:salt:hash
+
+# 会话密钥（推荐）
+STUDIO_SESSION_SECRET=your-session-secret
+
+# 会话有效期（秒，默认 3 天）
+STUDIO_SESSION_TTL_SECONDS=259200
+
+# 管理员名称（用于留言标识）
+STUDIO_OWNER_NAME=Author
+```
+
+#### 可选配置
+
+```env
+# 数据集合名称
+CLOUDBASE_PROJECTS_COLLECTION=portfolio_projects
+CLOUDBASE_COVER_DIR=portfolio-covers
+CLOUDBASE_MESSAGES_COLLECTION=project_messages
+
+# GitHub Stars 缓存时间（毫秒）
+GITHUB_STARS_CACHE_TTL_MS=3600000
+```
+
+### 3. 生成管理员 Token 哈希
+
+推荐使用哈希模式存储管理员 Token：
 
 ```bash
 npm run studio:hash -- "your-plain-token"
 ```
 
-Paste the output (format `sha256:<salt>:<hash>`) into `.env.local`.
+将输出的 `sha256:<salt>:<hash>` 格式内容填入 `.env.local` 的 `STUDIO_ADMIN_TOKEN_HASH`。
 
-## 3) Studio CMS (single-page management)
-
-`/studio` is now a 3-stage CMS:
-
-1. `基础信息`:
-- slug, project status, bilingual title/tagline
-
-2. `内容信息`:
-- bilingual summary/description/design/architecture
-- tech tags
-
-3. `发布信息`:
-- cover path + image upload to CloudBase storage
-- github/live/video links
-- eta/progress
-- `保存草稿` / `发布上线`
-
-### Publish model
-
-- `draft`: hidden from frontend
-- `published`: visible on frontend
-
-The public pages only show `published` projects.
-
-### Studio security
-
-- Route protected by `proxy.ts`: unauthenticated requests to `/studio` are redirected to `/studio/login`
-- `/studio/login` verifies admin token (plain or hash mode) and issues an httpOnly signed session cookie
-- Write APIs (`/api/projects`, `/api/studio/upload`) require valid session/token
-
-## 4) API and runtime behavior
-
-- `GET /api/projects`:
-  - public list (published only)
-- `GET /api/projects?scope=all`:
-  - full list (requires studio auth)
-- `POST /api/projects`:
-  - seed / upsert / delete (requires studio auth)
-- `POST /api/studio/upload`:
-  - upload cover image to CloudBase storage (requires studio auth)
-
-After write operations, paths are revalidated to refresh frontend content.
-
-## 5) Data model and sources
-
-Schema:
-- `lib/projects.ts` (`ProjectItem`, bilingual fields, visibility)
-
-CloudBase adapter:
-- `lib/cloudbase-projects.ts`
-
-Runtime source + fallback:
-- `lib/projects-source.ts`
-
-Studio auth:
-- `lib/studio-auth.ts`
-
-Messages:
-- `lib/messages.ts`
-- `lib/cloudbase-messages.ts`
-- `lib/messages-source.ts`
-- `app/api/projects/[slug]/messages/route.ts`
-
-## 6) Build checks
+### 4. 启动开发服务器
 
 ```bash
-npm run lint
-npm run build
+npm run dev
 ```
+
+访问：
+- 前台首页: http://localhost:3000 （自动跳转到 `/zh`）
+- Studio 登录: http://localhost:3000/studio/login
+- Studio CMS: http://localhost:3000/studio
+
+## 项目结构
+
+```
+personal-website/
+├── app/                          # Next.js App Router
+│   ├── [locale]/                 # 国际化路由
+│   │   ├── page.tsx              # 首页
+│   │   ├── loading.tsx           # 首页骨架屏
+│   │   └── projects/             # 项目页面
+│   │       ├── page.tsx          # 项目列表
+│   │       ├── loading.tsx       # 项目列表骨架屏
+│   │       └── [slug]/           # 项目详情
+│   │           └── page.tsx      # 项目详情页
+│   ├── api/                      # API 路由
+│   │   ├── projects/             # 项目 API
+│   │   ├── studio/               # Studio API
+│   │   ├── messages/             # 留言 API
+│   │   └── metrics/              # 统计 API
+│   ├── studio/                   # Studio CMS
+│   │   ├── page.tsx              # CMS 主页
+│   │   └── login/                # 登录页
+│   ├── layout.tsx                # 根布局
+│   ├── page.tsx                  # 根页面（重定向）
+│   └── globals.css               # 全局样式
+├── components/                   # React 组件
+│   ├── SiteHeader.tsx            # 网站头部
+│   ├── ProjectCard.tsx           # 项目卡片
+│   ├── ProjectsFilterGrid.tsx    # 项目筛选网格
+│   ├── ProjectDetailActions.tsx  # 项目详情操作
+│   ├── MessageBoard.tsx          # 留言板
+│   ├── InteractiveHeroScene.tsx  # Hero 场景
+│   ├── Skeleton.tsx              # 骨架屏组件
+│   ├── ThemeToggle.tsx           # 主题切换
+│   ├── LanguageSwitch.tsx        # 语言切换
+│   └── VisitCounter.tsx          # 访问量统计
+├── lib/                          # 工具库
+│   ├── projects.ts               # 项目数据模型
+│   ├── projects-source.ts        # 项目数据源
+│   ├── cloudbase-projects.ts     # CloudBase 项目适配器
+│   ├── cloudbase-messages.ts     # CloudBase 留言适配器
+│   ├── cloudbase-metrics.ts      # CloudBase 统计适配器
+│   ├── cloudbase.ts              # CloudBase 客户端
+│   ├── messages.ts               # 留言数据模型
+│   ├── messages-source.ts        # 留言数据源
+│   ├── i18n.ts                   # 国际化配置
+│   ├── github-stars.ts           # GitHub Stars 获取
+│   ├── project-selection.ts      # 项目筛选排序
+│   └── studio-auth.ts            # Studio 认证
+├── public/                       # 静态资源
+│   ├── hero/                     # Hero 图片
+│   ├── projects/                 # 项目封面
+│   └── avatar-placeholder.svg    # 头像占位图
+├── scripts/                      # 脚本工具
+│   └── studio-token-hash.mjs     # Token 哈希生成
+├── package.json                  # 项目配置
+├── tsconfig.json                 # TypeScript 配置
+├── next.config.ts                # Next.js 配置
+├── tailwind.config.ts            # Tailwind 配置
+└── .env.example                  # 环境变量示例
+```
+
+## 核心功能说明
+
+### 1. 国际化 (i18n)
+
+支持中文和英文两种语言，通过 URL 路径区分：
+- 中文: `/zh`
+- 英文: `/en`
+
+语言文件位于 `lib/i18n.ts`，所有文案都支持双语。
+
+### 2. 主题系统
+
+支持深色和浅色两种主题：
+- 通过 `data-theme` 属性切换
+- 使用 CSS 变量实现主题色
+- 自动保存用户偏好到 localStorage
+
+### 3. 项目数据源
+
+项目数据支持多种来源：
+1. **CloudBase**（优先）: 运行时从云端读取
+2. **本地数据**（回退）: CloudBase 不可用时使用本地种子数据
+
+数据源逻辑在 `lib/projects-source.ts` 中实现。
+
+### 4. Studio CMS
+
+后台管理系统，功能包括：
+- 项目 CRUD 操作
+- 封面图片上传
+- 草稿/发布状态管理
+- 安全的会话认证
+
+#### 编辑流程
+
+1. **基础信息**: slug、状态、双语标题/标语
+2. **内容信息**: 双语摘要/描述/设计/架构、技术标签
+3. **发布信息**: 封面图片、链接、进度、保存草稿/发布上线
+
+#### 发布模型
+
+- `draft`: 草稿，前台不显示
+- `published`: 已发布，前台可见
+
+### 5. 留言系统
+
+支持项目留言功能：
+- 游客留言
+- 管理员回复
+- 留言审核
+- 嵌套回复
+
+### 6. 骨架屏加载
+
+使用骨架屏提升用户体验：
+- 首页骨架屏
+- 项目列表骨架屏
+- 平滑过渡动画
+
+## 部署
+
+### Vercel 部署
+
+1. Fork 本仓库
+2. 在 Vercel 中导入项目
+3. 配置环境变量
+4. 部署
+
+### 自托管
+
+```bash
+# 构建
+npm run build
+
+# 启动
+npm start
+```
+
+## 开发命令
+
+```bash
+# 开发服务器
+npm run dev
+
+# 构建
+npm run build
+
+# 启动生产服务器
+npm start
+
+# 代码检查
+npm run lint
+
+# 生成 Studio Token 哈希
+npm run studio:hash -- "your-token"
+```
+
+## 环境变量说明
+
+| 变量名 | 必需 | 说明 | 默认值 |
+|--------|------|------|--------|
+| `CLOUDBASE_ENV_ID` | 是 | 腾讯云开发环境 ID | - |
+| `CLOUDBASE_API_KEY` | 否 | API Key 认证 | - |
+| `CLOUDBASE_SECRET_ID` | 否 | Secret ID 认证 | - |
+| `CLOUDBASE_SECRET_KEY` | 否 | Secret Key 认证 | - |
+| `STUDIO_ADMIN_TOKEN` | 否 | 管理员明文 Token | - |
+| `STUDIO_ADMIN_TOKEN_HASH` | 否 | 管理员哈希 Token | - |
+| `STUDIO_SESSION_SECRET` | 否 | 会话签名密钥 | - |
+| `STUDIO_SESSION_TTL_SECONDS` | 否 | 会话有效期（秒） | 259200 |
+| `STUDIO_OWNER_NAME` | 否 | 管理员名称 | Author |
+| `CLOUDBASE_PROJECTS_COLLECTION` | 否 | 项目集合名称 | portfolio_projects |
+| `CLOUDBASE_COVER_DIR` | 否 | 封面存储目录 | portfolio-covers |
+| `CLOUDBASE_MESSAGES_COLLECTION` | 否 | 留言集合名称 | project_messages |
+
+## 数据清除
+
+### CloudBase 控制台
+1. 登录 [腾讯云控制台](https://console.cloud.tencent.com/tcb)
+2. 进入云开发环境 → 数据库
+3. 删除以下集合：
+   - `portfolio_projects` - 项目数据
+   - `portfolio_metrics` - 访问统计
+   - `project_messages` - 留言数据
+
+### API 方式
+```bash
+# 删除单个项目
+curl -X POST http://localhost:3000/api/projects \
+  -H "Content-Type: application/json" \
+  -d '{"action": "delete", "slug": "项目slug"}'
+```
+
+## 路线图
+
+### v2.0 - 博客功能
+- [ ] 博客文章管理（创建、编辑、删除）
+- [ ] Markdown 编辑器支持
+- [ ] 文章分类和标签
+- [ ] 开发踩坑记录
+- [ ] 学习笔记分享
+- [ ] 文章搜索功能
+
+### v2.1 - 增强功能
+- [ ] 项目演示视频嵌入
+- [ ] GitHub 贡献图表集成
+- [ ] 多语言内容管理优化
+- [ ] 图片 CDN 集成
+
+## 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 许可证
+
+MIT License
