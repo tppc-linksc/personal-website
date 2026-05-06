@@ -221,22 +221,19 @@ personal-website/
 
 ## 部署
 
-### Vercel 部署
+详细的部署教程（阿里云 + 域名 + ICP 备案 + HTTPS）请查看：
 
-1. Fork 本仓库
-2. 在 Vercel 中导入项目
-3. 配置环境变量
-4. 部署
+→ **[DEPLOY.md](./DEPLOY.md)**
 
-### 自托管
+### 快速开始（本地开发）
 
 ```bash
-# 构建
-npm run build
-
-# 启动
-npm start
+npm install
+cp .env.example .env.local  # 编辑 .env.local 填写配置
+npm run dev
 ```
+
+访问 http://localhost:3000
 
 ## 开发命令
 
