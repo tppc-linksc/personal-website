@@ -60,14 +60,14 @@ ssh root@你的服务器公网IP
 | A | @ | 服务器公网IP | 600 |
 | A | www | 服务器公网IP | 600 |
 
-> `@` 代表 tppc.top 本身，`www` 代表 www.tppc.top
+> `@` 代表 yourdomain.com 本身，`www` 代表 www.yourdomain.com
 
 ### 2.2 验证解析
 
 ```bash
 # 等几分钟后验证
-ping tppc.top
-nslookup tppc.top
+ping yourdomain.com
+nslookup yourdomain.com
 ```
 
 ---
@@ -162,8 +162,8 @@ apt install -y certbot python3-certbot-nginx
 
 ```bash
 # 方法一：从 GitHub 克隆（无需 SSH key，公开仓库用 https）
-git clone https://github.com/tppc-linksc/personal-website.git /home/personal-website
-cd /home/personal-website
+git clone https://github.com/yourusername/your-repo.git /home/website
+cd /home/website
 
 # 方法二：从本地上传（如果 GitHub 下载慢）
 # 本地执行: scp -r ./personal-website root@服务器IP:/home/
@@ -172,7 +172,7 @@ cd /home/personal-website
 ### 5.2 配置环境变量
 
 ```bash
-cd /home/personal-website
+cd /home/website
 
 # 复制示例配置
 cp .env.example .env
@@ -205,7 +205,7 @@ vim /etc/nginx/sites-available/personal-website
 ```nginx
 server {
     listen 80;
-    server_name tppc.top www.tppc.top;
+    server_name yourdomain.com www.yourdomain.com;
 
     # 日志
     access_log /var/log/nginx/personal-website-access.log;
@@ -213,14 +213,14 @@ server {
 
     # 上传图片和静态资源
     location /uploads/ {
-        alias /home/personal-website/public/uploads/;
+        alias /home/website/public/uploads/;
         expires 30d;
         add_header Cache-Control "public, immutable";
     }
 
     # 静态资源缓存
     location /_next/static/ {
-        alias /home/personal-website/.next/static/;
+        alias /home/website/.next/static/;
         expires 365d;
         add_header Cache-Control "public, immutable";
     }
@@ -254,7 +254,7 @@ systemctl reload nginx
 ### 5.5 启动应用
 
 ```bash
-cd /home/personal-website
+cd /home/website
 
 # PM2 启动
 pm2 start npm --name "personal-website" -- start
@@ -268,7 +268,7 @@ pm2 save
 
 ### 5.6 验证
 
-浏览器访问 `http://tppc.top`，应该能看到网站首页。
+浏览器访问 `http://yourdomain.com`，应该能看到网站首页。
 
 ---
 
@@ -278,7 +278,7 @@ pm2 save
 
 ```bash
 # 确保 DNS 解析已生效，80 端口已开放
-certbot --nginx -d tppc.top -d www.tppc.top
+certbot --nginx -d yourdomain.com -d www.yourdomain.com
 
 # 按提示输入邮箱，选择是否重定向 HTTP 到 HTTPS（选 2）
 ```
@@ -299,7 +299,7 @@ certbot renew --dry-run
 ### 7.1 更新代码
 
 ```bash
-cd /home/personal-website
+cd /home/website
 
 # 拉取最新代码
 git pull
@@ -329,8 +329,8 @@ tail -f /var/log/nginx/personal-website-error.log
 
 ```bash
 # 备份到本地
-scp -r root@服务器IP:/home/personal-website/data ./backup/
-scp root@服务器IP:/home/personal-website/lib/projects.ts ./backup/
+scp -r root@服务器IP:/home/website/data ./backup/
+scp root@服务器IP:/home/website/lib/projects.ts ./backup/
 ```
 
 ### 7.4 添加备案号
@@ -339,54 +339,87 @@ scp root@服务器IP:/home/personal-website/lib/projects.ts ./backup/
 
 ---
 
-## 8. 二级域名规划
+## 8. 多服务部署（二级域名）
 
-### 8.1 当前网站
+当服务器上有多个项目时，用 nginx 按域名转发到不同端口。
 
-| 子域名 | 用途 |
-|--------|------|
-| `tppc.top` | 主域名，个人作品集网站 |
-| `www.tppc.top` | 同上（301 重定向到主域） |
+### 8.1 添加子域名 DNS 记录
 
-### 8.2 推荐的二级域名
+```
+例：要部署 blog.yourdomain.com
 
-| 子域名 | 用途 | 技术栈建议 |
-|--------|------|-----------|
-| `blog.tppc.top` | 博客（开发笔记/踩坑记录） | Next.js + MDX |
-| `lab.tppc.top` | 实验室（AI 小工具/Demo） | 任意前端框架 |
-| `api.tppc.top` | API 服务 | Express/Fastify |
-| `status.tppc.top` | 服务状态监控 | Uptime Kuma |
-| `img.tppc.top` | 图床服务 | Chevereto 自建 |
-| `links.tppc.top` | 友链/书签导航 | 静态页面 |
-| `tools.tppc.top` | 开发小工具集 | React/Next.js |
-| `admin.tppc.top` | 统一管理后台 | 集成各服务入口 |
+DNS 控制台 → 添加记录：
+  主机记录: blog
+  记录类型: A
+  记录值: 服务器IP
+```
 
-### 8.3 如何添加二级域名
+### 8.2 nginx 按域名转发
 
-每次添加新服务只需两步 DNS 记录：
-
-```bash
-# 例：添加 blog.tppc.top
-# DNS 控制台 → 添加记录 → 主机记录: blog, 类型: A, 值: 服务器IP
-
-# 对应 nginx 配置：
+```nginx
+# 项目A：个人网站 → 端口 3000
 server {
     listen 80;
-    server_name blog.tppc.top;
+    server_name yourdomain.com www.yourdomain.com;
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+
+# 项目B：博客 → 端口 4000
+server {
+    listen 80;
+    server_name blog.yourdomain.com;
     location / {
         proxy_pass http://127.0.0.1:4000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+
+# 项目C：API → 端口 5000
+server {
+    listen 80;
+    server_name api.yourdomain.com;
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
     }
 }
 ```
 
-### 8.4 多服务端口规划
+### 8.3 端口规划建议
 
-| 服务 | 端口 |
-|------|------|
-| 个人网站 | 3000 |
-| 博客 | 4000 |
-| API | 5000 |
-| 工具集 | 6000 |
-| 实验室 | 7000 |
+为避免冲突，提前规划各服务的端口：
 
-每个服务用 PM2 管理，nginx 按域名转发到对应端口。
+| 端口范围 | 用途 |
+|---------|------|
+| 3000-3999 | 前端/网站项目 |
+| 4000-4999 | 后端/API 项目 |
+| 5000-5999 | 工具/辅助服务 |
+| 6000-6999 | 实验/测试项目 |
+
+### 8.4 PM2 管理多服务
+
+```bash
+# 每个服务单独命名
+pm2 start npm --name "website" -- start
+pm2 start npm --name "blog" -- start
+pm2 start node --name "api" -- server.js
+
+# 查看所有服务
+pm2 status
+
+# 统一保存
+pm2 save
+```
+
+### 8.5 SSL 证书批量申请
+
+```bash
+# 为多个域名同时申请证书
+certbot --nginx -d yourdomain.com -d www.yourdomain.com -d blog.yourdomain.com -d api.yourdomain.com
+```
