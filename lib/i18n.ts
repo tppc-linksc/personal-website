@@ -318,5 +318,5 @@ export const dictionaries: Record<Locale, Dictionary> = {
 };
 
 export function getDictionary(locale: Locale): Dictionary {
-  return dictionaries[locale];
+  return structuredClone(dictionaries[locale]);
 }

@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ProjectItem } from "@/lib/projects";
+import { ProjectList } from "@/components/studio/ProjectList";
+import { BasicTab } from "@/components/studio/BasicTab";
+import { ContentTab } from "@/components/studio/ContentTab";
+import { PublishTab } from "@/components/studio/PublishTab";
 
 const emptyProject: ProjectItem = {
   slug: "",
@@ -172,13 +176,6 @@ export default function StudioPage() {
     setDraft((prev) => ({ ...prev, [path]: value }));
   }
 
-  const filteredProjects = useMemo(() => {
-    if (filter === "all") {
-      return projects;
-    }
-    return projects.filter((item) => (item.visibility ?? "published") === filter);
-  }, [filter, projects]);
-
   return (
     <main className="min-h-screen bg-[#070913] px-4 py-6 text-zinc-100 md:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -226,48 +223,13 @@ export default function StudioPage() {
         </header>
 
         <div className="grid gap-6 md:grid-cols-[320px,1fr]">
-          <aside className="surface-panel rounded-2xl p-3">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm text-zinc-300">项目列表</span>
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value as VisibilityFilter)}
-                className="rounded-lg border border-white/15 bg-black/25 px-2 py-1 text-xs"
-              >
-                <option value="all">全部</option>
-                <option value="draft">仅草稿</option>
-                <option value="published">仅已发布</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              {filteredProjects.map((item) => (
-                <button
-                  key={item.slug}
-                  type="button"
-                  onClick={() => selectProject(item)}
-                  className={`w-full rounded-xl border px-3 py-2 text-left text-sm transition ${
-                    selectedSlug === item.slug
-                      ? "border-cyan-300/70 bg-cyan-300/10"
-                      : "border-white/10 bg-white/[0.03] hover:border-white/30"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="font-medium">{item.title.zh || item.slug}</div>
-                    <span
-                      className={`rounded px-1.5 py-0.5 text-[10px] ${
-                        (item.visibility ?? "published") === "draft"
-                          ? "bg-amber-300/20 text-amber-200"
-                          : "bg-emerald-300/20 text-emerald-200"
-                      }`}
-                    >
-                      {item.visibility ?? "published"}
-                    </span>
-                  </div>
-                  <div className="mt-1 text-xs text-zinc-400">{item.status}</div>
-                </button>
-              ))}
-            </div>
-          </aside>
+          <ProjectList
+            projects={projects}
+            selectedSlug={selectedSlug}
+            filter={filter}
+            onFilterChange={setFilter}
+            onSelect={selectProject}
+          />
 
           <section className="surface-panel rounded-2xl p-4 md:p-5">
             <div className="mb-5 flex flex-wrap gap-2">
@@ -291,319 +253,28 @@ export default function StudioPage() {
               ))}
             </div>
 
-            {tab === "basic" && (
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="text-sm">
-                  <div className="mb-1 text-zinc-300">Slug</div>
-                  <input
-                    value={draft.slug}
-                    onChange={(e) => applyField("slug", e.target.value)}
-                    className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                  />
-                </label>
-
-                <label className="text-sm">
-                  <div className="mb-1 text-zinc-300">项目状态</div>
-                  <select
-                    value={draft.status}
-                    onChange={(e) => applyField("status", e.target.value as ProjectItem["status"])}
-                    className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                  >
-                    <option value="live">live</option>
-                    <option value="completed">completed</option>
-                    <option value="in_progress">in_progress</option>
-                    <option value="planned">planned</option>
-                  </select>
-                </label>
-
-                <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm md:col-span-2">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(draft.defaultFeatured)}
-                    onChange={(e) => applyField("defaultFeatured", e.target.checked)}
-                    className="h-4 w-4"
-                  />
-                  <span>
-                    默认精选补位
-                    <span className="ml-2 text-xs text-zinc-400">高星项目不足 3 个时用于首页补位</span>
-                  </span>
-                </label>
-
-                <label className="text-sm">
-                  <div className="mb-1 text-zinc-300">项目名称（中文）</div>
-                  <input
-                    value={draft.title.zh}
-                    onChange={(e) => applyField("title", { ...draft.title, zh: e.target.value })}
-                    className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                  />
-                </label>
-
-                <label className="text-sm">
-                  <div className="mb-1 text-zinc-300">Project Name (EN)</div>
-                  <input
-                    value={draft.title.en}
-                    onChange={(e) => applyField("title", { ...draft.title, en: e.target.value })}
-                    className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                  />
-                </label>
-
-                <label className="text-sm">
-                  <div className="mb-1 text-zinc-300">Tagline（中文）</div>
-                  <input
-                    value={draft.tagline.zh}
-                    onChange={(e) => applyField("tagline", { ...draft.tagline, zh: e.target.value })}
-                    className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                  />
-                </label>
-
-                <label className="text-sm">
-                  <div className="mb-1 text-zinc-300">Tagline (EN)</div>
-                  <input
-                    value={draft.tagline.en}
-                    onChange={(e) => applyField("tagline", { ...draft.tagline, en: e.target.value })}
-                    className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                  />
-                </label>
-              </div>
-            )}
+            {tab === "basic" && <BasicTab draft={draft} onFieldChange={applyField} />}
 
             {tab === "content" && (
-              <>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">Summary（中文）</div>
-                    <textarea
-                      value={draft.summary.zh}
-                      onChange={(e) => applyField("summary", { ...draft.summary, zh: e.target.value })}
-                      rows={3}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">Summary (EN)</div>
-                    <textarea
-                      value={draft.summary.en}
-                      onChange={(e) => applyField("summary", { ...draft.summary, en: e.target.value })}
-                      rows={3}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                </div>
-
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">Description（中文）</div>
-                    <textarea
-                      value={draft.description.zh}
-                      onChange={(e) => applyField("description", { ...draft.description, zh: e.target.value })}
-                      rows={5}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">Description (EN)</div>
-                    <textarea
-                      value={draft.description.en}
-                      onChange={(e) => applyField("description", { ...draft.description, en: e.target.value })}
-                      rows={5}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                </div>
-
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">项目设计（中文）</div>
-                    <textarea
-                      value={draft.design.zh}
-                      onChange={(e) => applyField("design", { ...draft.design, zh: e.target.value })}
-                      rows={3}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">Project Design (EN)</div>
-                    <textarea
-                      value={draft.design.en}
-                      onChange={(e) => applyField("design", { ...draft.design, en: e.target.value })}
-                      rows={3}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                </div>
-
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">项目架构（中文）</div>
-                    <textarea
-                      value={draft.architecture.zh}
-                      onChange={(e) => applyField("architecture", { ...draft.architecture, zh: e.target.value })}
-                      rows={3}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">Architecture (EN)</div>
-                    <textarea
-                      value={draft.architecture.en}
-                      onChange={(e) => applyField("architecture", { ...draft.architecture, en: e.target.value })}
-                      rows={3}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                </div>
-
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">Tech（逗号分隔）</div>
-                    <input
-                      value={techInput}
-                      onChange={(e) => {
-                        setTechInput(e.target.value);
-                        applyField(
-                          "tech",
-                          e.target.value
-                            .split(",")
-                            .map((item) => item.trim())
-                            .filter(Boolean)
-                        );
-                      }}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                </div>
-              </>
+              <ContentTab
+                draft={draft}
+                techInput={techInput}
+                onTechInputChange={setTechInput}
+                onFieldChange={applyField}
+              />
             )}
 
             {tab === "publish" && (
-              <>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">封面图路径</div>
-                    <input
-                      value={draft.cover}
-                      onChange={(e) => applyField("cover", e.target.value)}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                    <div className="mt-2 text-xs text-zinc-400">支持普通 URL 或 `cloud://fileID`。</div>
-                  </label>
-
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">上传封面图</div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          void uploadCover(file);
-                        }
-                      }}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2"
-                    />
-                    <div className="mt-2 text-xs text-zinc-400">{uploading ? "上传中..." : "上传后自动写入 cover 字段"}</div>
-                  </label>
-                </div>
-
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">GitHub 地址（可空）</div>
-                    <input
-                      value={draft.github}
-                      onChange={(e) => applyField("github", e.target.value)}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">Live 地址（可空）</div>
-                    <input
-                      value={draft.live ?? ""}
-                      onChange={(e) => applyField("live", e.target.value)}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                </div>
-
-                <div className="mt-4 grid gap-4 md:grid-cols-3">
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">视频链接（可空）</div>
-                    <input
-                      value={draft.videoUrl ?? ""}
-                      onChange={(e) => applyField("videoUrl", e.target.value)}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">ETA（可空）</div>
-                    <input
-                      value={draft.eta ?? ""}
-                      onChange={(e) => applyField("eta", e.target.value)}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                  <label className="text-sm">
-                    <div className="mb-1 text-zinc-300">进度（0-100）</div>
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={draft.progress ?? 0}
-                      onChange={(e) => applyField("progress", Number(e.target.value))}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 outline-none ring-cyan-300/60 focus:ring"
-                    />
-                  </label>
-                </div>
-
-                <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                  <div className="text-sm text-zinc-300">当前可见性：{draft.visibility ?? "draft"}</div>
-                  <div className="mt-2 text-xs text-zinc-400">`draft` 不会出现在前台，`published` 会在前台展示。</div>
-                </div>
-
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() =>
-                      void postAction(
-                        {
-                          action: "upsert",
-                          project: { ...draft, visibility: "draft" },
-                        },
-                        "草稿已保存"
-                      )
-                    }
-                    className="rounded-xl border border-amber-300/60 bg-amber-300/10 px-4 py-2 text-sm text-amber-100 transition hover:bg-amber-300/20 disabled:opacity-50"
-                  >
-                    保存草稿
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() =>
-                      void postAction(
-                        {
-                          action: "upsert",
-                          project: { ...draft, visibility: "published" },
-                        },
-                        "项目已发布"
-                      )
-                    }
-                    className="rounded-xl border border-cyan-300/70 bg-cyan-300/10 px-4 py-2 text-sm text-cyan-100 transition hover:bg-cyan-300/20 disabled:opacity-50"
-                  >
-                    发布上线
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={loading || !draft.slug}
-                    onClick={() => void postAction({ action: "delete", slug: draft.slug }, "项目已删除")}
-                    className="rounded-xl border border-red-300/55 bg-red-300/10 px-4 py-2 text-sm text-red-100 transition hover:bg-red-300/20 disabled:opacity-50"
-                  >
-                    删除项目
-                  </button>
-                </div>
-              </>
+              <PublishTab
+                draft={draft}
+                uploading={uploading}
+                loading={loading}
+                onFieldChange={applyField}
+                onUpload={(file) => void uploadCover(file)}
+                onSaveDraft={() => void postAction({ action: "upsert", project: { ...draft, visibility: "draft" } }, "草稿已保存")}
+                onPublish={() => void postAction({ action: "upsert", project: { ...draft, visibility: "published" } }, "项目已发布")}
+                onDelete={() => void postAction({ action: "delete", slug: draft.slug }, "项目已删除")}
+              />
             )}
           </section>
         </div>

@@ -3,12 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getProjectBySlug } from "@/lib/projects-source";
 import { getMessageById, getMessageTreeByProject, createMessage } from "@/lib/messages-source";
 import { isStudioAuthorized, STUDIO_SESSION_COOKIE } from "@/lib/studio-auth";
+import { isRateLimited } from "@/lib/rate-limit";
 
 const MAX_CONTENT_LEN = 800;
 const MAX_NICKNAME_LEN = 40;
 const GUEST_RATE_LIMIT = 8;
 const WINDOW_MS = 60 * 1000;
-const guestRateMap = new Map<string, number[]>();
 const GUEST_NAME_PREFIX = ["星云", "流光", "海盐", "夜航", "银翼", "极光", "深空", "拾光"];
 const GUEST_NAME_SUFFIX = ["旅人", "开发者", "访客", "同学", "朋友", "观察者", "建造者", "玩家"];
 
@@ -29,19 +29,6 @@ function randomGuestNickname(): string {
   const tail = GUEST_NAME_SUFFIX[Math.floor(Math.random() * GUEST_NAME_SUFFIX.length)];
   const tag = Math.random().toString(36).slice(2, 6).toUpperCase();
   return `${head}${tail}${tag}`;
-}
-
-function limitedByRateLimit(ipHash: string): boolean {
-  const now = Date.now();
-  const items = guestRateMap.get(ipHash) ?? [];
-  const recent = items.filter((time) => now - time < WINDOW_MS);
-  if (recent.length >= GUEST_RATE_LIMIT) {
-    guestRateMap.set(ipHash, recent);
-    return true;
-  }
-  recent.push(now);
-  guestRateMap.set(ipHash, recent);
-  return false;
 }
 
 export async function GET(request: NextRequest, context: { params: Promise<{ slug: string }> }) {
@@ -107,7 +94,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ sl
 
     if (!authorized) {
       const ipHash = hashIp(getClientIp(request));
-      if (limitedByRateLimit(ipHash)) {
+      if (isRateLimited(ipHash, GUEST_RATE_LIMIT, WINDOW_MS)) {
         return NextResponse.json({ error: "Too many requests" }, { status: 429 });
       }
     }

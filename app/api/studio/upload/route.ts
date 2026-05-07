@@ -28,8 +28,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "未提供文件" }, { status: 400 });
     }
 
+    if (!file.type.startsWith("image/")) {
+      return NextResponse.json({ error: "仅支持上传图片文件" }, { status: 400 });
+    }
+
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: "文件大小不能超过 5MB" }, { status: 400 });
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 100);
     const fileName = `${Date.now()}-${safeName}`;
     const filePath = join(uploadDir(), fileName);
 

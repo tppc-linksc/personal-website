@@ -39,9 +39,14 @@
 ### API 接口
 - `GET /api/projects` - 获取项目列表
 - `POST /api/projects` - 创建/更新/删除项目
+- `GET /api/studio/session` - 检查登录状态
+- `POST /api/studio/session` - 管理员登录
+- `DELETE /api/studio/session` - 退出登录
 - `POST /api/studio/upload` - 上传封面图片
 - `GET /api/projects/[slug]/messages` - 获取留言
 - `POST /api/projects/[slug]/messages` - 提交留言
+- `GET /api/metrics/visits` - 获取访问量
+- `POST /api/metrics/visits` - 记录访问
 
 ## 快速开始
 
@@ -122,11 +127,19 @@ personal-website/
 │   ├── page.tsx                  # 根页面（重定向）
 │   └── globals.css               # 全局样式
 ├── components/                   # React 组件
+│   ├── studio/                   # Studio CMS 子组件
+│   │   ├── ProjectList.tsx       # 项目列表侧栏
+│   │   ├── BasicTab.tsx          # 基础信息编辑
+│   │   ├── ContentTab.tsx        # 内容信息编辑
+│   │   └── PublishTab.tsx        # 发布信息编辑
 │   ├── SiteHeader.tsx            # 网站头部
 │   ├── ProjectCard.tsx           # 项目卡片
 │   ├── ProjectsFilterGrid.tsx    # 项目筛选网格
 │   ├── ProjectDetailActions.tsx  # 项目详情操作
-│   ├── MessageBoard.tsx          # 留言板
+│   ├── MessageBoard.tsx          # 留言板主组件
+│   ├── MessageCard.tsx           # 留言卡片
+│   ├── ReplyEditor.tsx           # 回复编辑器
+│   ├── message-board-types.ts    # 留言板类型定义
 │   ├── InteractiveHeroScene.tsx  # Hero 场景
 │   ├── Skeleton.tsx              # 骨架屏组件
 │   ├── ThemeToggle.tsx           # 主题切换
@@ -138,10 +151,11 @@ personal-website/
 │   ├── messages.ts               # 留言数据模型
 │   ├── messages-source.ts        # 留言数据源
 │   ├── i18n.ts                   # 国际化配置
-│   ├── site-content.ts           # 网站内容配置
+│   ├── site-content.ts           # 网站内容配置（版本化 localStorage）
 │   ├── github-stars.ts           # GitHub Stars 获取
 │   ├── project-selection.ts      # 项目筛选排序
-│   └── studio-auth.ts            # Studio 认证
+│   ├── studio-auth.ts            # Studio 认证（HMAC 会话）
+│   └── rate-limit.ts             # 文件级限流
 ├── public/                       # 静态资源
 │   ├── hero/                     # Hero 图片
 │   ├── projects/                 # 项目封面
@@ -174,7 +188,14 @@ personal-website/
 
 ### 3. 项目数据源
 
-项目数据存储在本地 TypeScript 文件中（`lib/projects.ts`），无需外部数据库。留言和访问统计存储为 JSON 文件（`data/` 目录）。
+项目数据存储在本地 TypeScript 文件中（`lib/projects.ts`），无需外部数据库。留言和访问统计存储为 JSON 文件（`data/` 目录）。所有 JSON 文件写入均使用原子写入模式（先写临时文件再 rename），防止写入中断导致数据损坏。
+
+### 3.5 安全机制
+
+- **会话认证**: 基于 HMAC-SHA256 的会话 token，支持明文和哈希两种管理员 Token 存储方式
+- **接口限流**: 基于文件持久化的滑动窗口限流，登录接口 5 次/分钟，留言接口 8 次/分钟
+- **上传校验**: 仅允许图片类型，限制 5MB 大小，文件名长度 100 字符
+- **安全响应头**: X-Content-Type-Options、X-Frame-Options、Referrer-Policy、Permissions-Policy
 
 ### 4. Studio CMS
 
@@ -201,7 +222,7 @@ personal-website/
 - Hero 区域：问候语、标题、描述、按钮文字和链接（支持中英文双语）
 - 关于我：描述文字、技能标签、头像上传
 - 品牌名称和底部联系方式
-- 内容存储在浏览器 localStorage，保存后页面实时更新
+- 内容存储在浏览器 localStorage（带 `__version` 版本号，支持未来数据迁移），保存后页面实时更新
 
 ### 6. 留言系统
 
@@ -263,6 +284,9 @@ npm run studio:hash -- "your-token"
 | `STUDIO_ADMIN_TOKEN_HASH` | 否 | 管理员哈希 Token | - |
 | `STUDIO_SESSION_SECRET` | 否 | 会话签名密钥 | 使用 ADMIN_TOKEN |
 | `STUDIO_SESSION_TTL_SECONDS` | 否 | 会话有效期（秒） | 259200 |
+| `GITHUB_TOKEN` | 否 | GitHub API Token（获取 star 数） | - |
+| `GITHUB_STARS_CACHE_TTL_MS` | 否 | Stars 缓存有效期（毫秒） | 1800000 |
+| `GITHUB_STARS_TIMEOUT_MS` | 否 | GitHub API 超时（毫秒） | 2500 |
 
 ## 数据存储
 
@@ -271,12 +295,13 @@ npm run studio:hash -- "your-token"
 | 数据类型 | 存储方式 | 文件位置 |
 |---------|---------|---------|
 | 项目数据 | TypeScript 文件 | `lib/projects.ts` |
-| 网站内容 | localStorage | 浏览器本地 |
-| 留言数据 | JSON 文件 | `data/messages.json` |
-| 访问统计 | JSON 文件 | `data/visits.json` |
+| 网站内容 | localStorage（版本化） | 浏览器本地 |
+| 留言数据 | JSON 文件（原子写入） | `data/messages.json` |
+| 访问统计 | JSON 文件（原子写入） | `data/visits.json` |
+| 限流记录 | JSON 文件 | `data/rate-limits.json` |
 | 上传图片 | 文件系统 | `public/uploads/` |
 
-数据可随时备份，只需复制 `lib/projects.ts` 和 `data/` 目录即可。
+数据可随时备份，只需复制 `lib/projects.ts` 和 `data/` 目录即可。`data/rate-limits.json` 为运行时限流数据，无需备份。
 
 ## 路线图
 

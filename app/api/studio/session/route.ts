@@ -6,23 +6,10 @@ import {
   verifyAdminToken,
   verifyStudioSession,
 } from "@/lib/studio-auth";
+import { isRateLimited } from "@/lib/rate-limit";
 
 const LOGIN_RATE_LIMIT = 5;
 const LOGIN_WINDOW_MS = 60 * 1000;
-const loginRateMap = new Map<string, number[]>();
-
-function isLoginRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const items = loginRateMap.get(ip) ?? [];
-  const recent = items.filter((time) => now - time < LOGIN_WINDOW_MS);
-  if (recent.length >= LOGIN_RATE_LIMIT) {
-    loginRateMap.set(ip, recent);
-    return true;
-  }
-  recent.push(now);
-  loginRateMap.set(ip, recent);
-  return false;
-}
 
 function clearCookie(response: NextResponse) {
   response.cookies.set({
@@ -43,7 +30,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
-  if (isLoginRateLimited(ip)) {
+  if (isRateLimited(ip, LOGIN_RATE_LIMIT, LOGIN_WINDOW_MS)) {
     return NextResponse.json({ error: "Too many login attempts" }, { status: 429 });
   }
 

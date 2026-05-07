@@ -55,46 +55,60 @@ export const defaultContent: SiteContent = {
 };
 
 const STORAGE_KEY = "site-content";
+const STORAGE_VERSION = 1;
 
-let cachedContent: SiteContent | null = null;
-let lastStoredString: string | null = null;
+interface StoragePayload {
+  __version: number;
+  data: SiteContent;
+}
+
+let cachedSnapshot: SiteContent | null = null;
+let lastRawString: string | null = null;
+
+function migrateStorageData(raw: Partial<SiteContent> | Partial<StoragePayload>): Partial<SiteContent> {
+  const hasVersion = raw && typeof raw === "object" && "__version" in raw;
+  const version = hasVersion ? (raw as StoragePayload).__version : 0;
+  const data = hasVersion ? (raw as StoragePayload).data : (raw as Partial<SiteContent>);
+
+  if (version < STORAGE_VERSION) {
+    // 未来版本变更时在这里添加迁移逻辑
+  }
+
+  return data ?? {};
+}
+
+function parseContent(raw: string | null): SiteContent {
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as Partial<SiteContent> | Partial<StoragePayload>;
+      const data = migrateStorageData(parsed);
+      return {
+        hero: { ...defaultContent.hero, ...data.hero },
+        about: { ...defaultContent.about, ...data.about },
+        brand: { ...defaultContent.brand, ...data.brand },
+        footer: { ...defaultContent.footer, ...data.footer },
+      };
+    } catch {
+      // ignore
+    }
+  }
+  return { ...defaultContent };
+}
 
 export function getContent(): SiteContent {
   if (typeof window === "undefined") {
     return defaultContent;
   }
 
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+  const raw = localStorage.getItem(STORAGE_KEY);
 
-    if (stored === lastStoredString && cachedContent) {
-      return cachedContent;
-    }
-
-    if (stored) {
-      const parsed = JSON.parse(stored) as Partial<SiteContent>;
-      cachedContent = {
-        hero: { ...defaultContent.hero, ...parsed.hero },
-        about: { ...defaultContent.about, ...parsed.about },
-        brand: { ...defaultContent.brand, ...parsed.brand },
-        footer: { ...defaultContent.footer, ...parsed.footer },
-      };
-    } else {
-      cachedContent = defaultContent;
-    }
-
-    lastStoredString = stored;
-    return cachedContent;
-  } catch {
-    // ignore
+  if (raw === lastRawString && cachedSnapshot) {
+    return cachedSnapshot;
   }
 
-  return defaultContent;
-}
-
-export function invalidateContentCache(): void {
-  cachedContent = null;
-  lastStoredString = null;
+  cachedSnapshot = parseContent(raw);
+  lastRawString = raw;
+  return cachedSnapshot;
 }
 
 export function setContent(content: SiteContent): void {
@@ -102,11 +116,15 @@ export function setContent(content: SiteContent): void {
     return;
   }
 
-  // 清除缓存
-  cachedContent = null;
-  lastStoredString = null;
-  
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
+  cachedSnapshot = null;
+  lastRawString = null;
+
+  const payload: StoragePayload = {
+    __version: STORAGE_VERSION,
+    data: content,
+  };
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   window.dispatchEvent(new Event("site-content-change"));
 }
 

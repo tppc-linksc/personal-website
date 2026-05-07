@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ImageUpload } from "@/components/ImageUpload";
 import { SiteHeader } from "@/components/SiteHeader";
 import type { SiteContent } from "@/lib/site-content";
-import { defaultContent, getContent, setContent, invalidateContentCache } from "@/lib/site-content";
+import { defaultContent, getContent, setContent } from "@/lib/site-content";
 
 export default function ContentPage() {
   const router = useRouter();
@@ -14,7 +14,6 @@ export default function ContentPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    invalidateContentCache();
     setContentState(getContent());
   }, []);
 
@@ -69,7 +68,7 @@ export default function ContentPage() {
       setContent(content);
       setSaved(true);
       setTimeout(() => {
-        router.push("/zh");
+        router.push("/");
       }, 1500);
     } catch {
       alert("保存失败");

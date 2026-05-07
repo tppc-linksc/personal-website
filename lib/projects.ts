@@ -201,5 +201,5 @@ export function t(value: LocalizedText, locale: Locale): string {
 }
 
 export function cloneLocalProjects(): ProjectItem[] {
-  return localProjects.map((project) => ({ ...project }));
+  return localProjects.map((project) => structuredClone(project));
 }

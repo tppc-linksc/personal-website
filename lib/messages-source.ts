@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from "fs";
 import { join } from "path";
 import { buildMessageTree, normalizeParentId, type MessageItem, type MessageNode, type MessageStatus } from "@/lib/messages";
 
@@ -20,7 +20,9 @@ function loadMessages(): MessageItem[] {
 
 function saveMessages(messages: MessageItem[]): void {
   ensureDataDir();
-  writeFileSync(DATA_FILE, JSON.stringify(messages, null, 2), "utf-8");
+  const tempFile = `${DATA_FILE}.tmp`;
+  writeFileSync(tempFile, JSON.stringify(messages, null, 2), "utf-8");
+  renameSync(tempFile, DATA_FILE);
 }
 
 export async function getMessagesByProject(projectSlug: string, options?: { includeHidden?: boolean }): Promise<MessageItem[]> {

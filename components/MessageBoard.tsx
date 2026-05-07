@@ -3,26 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Locale } from "@/lib/i18n";
 import type { MessageItem, MessageNode } from "@/lib/messages";
-
-interface MessageBoardDict {
-  title: string;
-  subtitle: string;
-  nickname: string;
-  nicknamePlaceholder: string;
-  content: string;
-  contentPlaceholder: string;
-  submit: string;
-  submitting: string;
-  reply: string;
-  cancelReply: string;
-  ownerTag: string;
-  empty: string;
-  sortLabel: string;
-  sortTime: string;
-  sortHot: string;
-  replyTo: string;
-  replies: string;
-}
+import type { MessageBoardDict } from "./message-board-types";
+import { MessageCard } from "./MessageCard";
+import { ReplyEditor } from "./ReplyEditor";
 
 interface MessageBoardProps {
   slug: string;
@@ -74,17 +57,6 @@ function appendMessageNode(tree: MessageNode[], message: MessageItem): MessageNo
   return walk(tree);
 }
 
-function formatTime(ts: number, locale: Locale): string {
-  return new Date(ts).toLocaleString(locale === "zh" ? "zh-CN" : "en-US", {
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 function countReplies(node: MessageNode): number {
   return node.replies.reduce((acc, item) => acc + 1 + countReplies(item), 0);
 }
@@ -118,103 +90,6 @@ function flattenReplies(items: MessageNode[], index: Map<string, string>): FlatR
 
   walk(items);
   return output;
-}
-
-function MessageCard({
-  item,
-  locale,
-  dict,
-  replyTo,
-  onReply,
-}: {
-  item: MessageNode;
-  locale: Locale;
-  dict: MessageBoardDict;
-  replyTo?: string;
-  onReply: (targetId: string) => void;
-}) {
-  return (
-    <div className="rounded-2xl border border-[var(--line)] bg-[var(--panel-strong)] p-4">
-      <div className="flex items-center gap-2">
-        <div className="text-sm font-medium text-[var(--text-main)]">{item.nickname}</div>
-        {item.authorType === "owner" && (
-          <span className="rounded-full border border-[var(--line-muted)] bg-[var(--chip-bg)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">
-            {dict.ownerTag}
-          </span>
-        )}
-      </div>
-      <div className="mt-1 text-xs text-[var(--text-soft)]">{formatTime(item.createdAt, locale)}</div>
-      {replyTo && <div className="mt-2 text-xs text-[var(--text-muted)]">{dict.replyTo} @{replyTo}</div>}
-      <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[var(--text-muted)]">{item.content}</p>
-      <button
-        type="button"
-        onClick={() => onReply(item.id)}
-        className="mt-3 text-xs text-[var(--text-soft)] transition hover:text-[var(--text-main)]"
-      >
-        {dict.reply}
-      </button>
-    </div>
-  );
-}
-
-function ReplyEditor({
-  dict,
-  canPostAsOwner,
-  nickname,
-  onNicknameChange,
-  content,
-  onContentChange,
-  submitting,
-  error,
-  onCancel,
-  onSubmit,
-}: {
-  dict: MessageBoardDict;
-  canPostAsOwner: boolean;
-  nickname: string;
-  onNicknameChange: (value: string) => void;
-  content: string;
-  onContentChange: (value: string) => void;
-  submitting: boolean;
-  error: string;
-  onCancel: () => void;
-  onSubmit: () => void;
-}) {
-  return (
-    <div className="rounded-xl border border-[var(--line)] bg-[var(--panel-strong)] p-3">
-      {!canPostAsOwner && (
-        <input
-          value={nickname}
-          onChange={(e) => onNicknameChange(e.target.value)}
-          placeholder={dict.nicknamePlaceholder}
-          className="form-field text-sm"
-        />
-      )}
-      <textarea
-        value={content}
-        onChange={(e) => onContentChange(e.target.value)}
-        placeholder={dict.contentPlaceholder}
-        rows={3}
-        className="form-field mt-2 text-sm"
-      />
-      <div className="mt-2 flex items-center justify-between">
-        <button type="button" onClick={onCancel} className="text-xs text-[var(--text-soft)] transition hover:text-[var(--text-main)]">
-          {dict.cancelReply}
-        </button>
-        <div className="flex items-center gap-3">
-          {error && <span className="text-xs text-red-500">{error}</span>}
-          <button
-            type="button"
-            onClick={onSubmit}
-            disabled={submitting}
-            className="rounded-lg border border-[var(--line-muted)] bg-[var(--button-bg)] px-3 py-1.5 text-xs text-[var(--text-main)] transition hover:border-[var(--text-muted)] disabled:opacity-50"
-          >
-            {submitting ? dict.submitting : dict.submit}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export function MessageBoard({ slug, locale, dict }: MessageBoardProps) {
@@ -295,8 +170,6 @@ export function MessageBoard({ slug, locale, dict }: MessageBoardProps) {
 
     if (json?.message) {
       setMessages((prev) => appendMessageNode(prev, json.message as MessageItem));
-      // Keep UI responsive with optimistic update, then reconcile with server data
-      // so newly created nodes are always in the same shape as fetched nodes.
       void loadMessages();
       return;
     }
