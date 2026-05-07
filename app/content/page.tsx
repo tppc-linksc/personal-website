@@ -60,13 +60,6 @@ export default function ContentPage() {
     }));
   }
 
-  function updateFooter(field: keyof SiteContent["footer"], value: string) {
-    setContentState((prev) => ({
-      ...prev,
-      footer: { ...prev.footer, [field]: value },
-    }));
-  }
-
   async function handleSave() {
     setSaving(true);
     setSaved(false);
@@ -356,36 +349,6 @@ export default function ContentPage() {
                   aspectRatio="4:5"
                   recommendedSize="640x800"
                   className="mt-2"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* 页脚区域 */}
-          <section className="glass-panel rounded-[24px] p-6">
-            <h2 className="text-lg font-semibold">页脚区域</h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">网站底部的联系方式</p>
-
-            <div className="mt-4 space-y-4">
-              <div>
-                <label className="text-sm font-medium">GitHub 链接</label>
-                <input
-                  type="url"
-                  value={content.footer.github}
-                  onChange={(e) => updateFooter("github", e.target.value)}
-                  className="form-field mt-2 w-full text-sm"
-                  placeholder="https://github.com/xxx"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Email 链接</label>
-                <input
-                  type="text"
-                  value={content.footer.email}
-                  onChange={(e) => updateFooter("email", e.target.value)}
-                  className="form-field mt-2 w-full text-sm"
-                  placeholder="mailto:xxx@example.com"
                 />
               </div>
             </div>
