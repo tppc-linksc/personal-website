@@ -181,14 +181,18 @@ cp .env.example .env
 vim .env
 ```
 
-填入（只需填第一行，其余可选）：
+填入：
 ```env
 # 必填：管理员登录密码
 STUDIO_ADMIN_TOKEN=你的密码
 
 # 可选
-STUDIO_OWNER_NAME=你的名字
-STUDIO_SESSION_TTL_SECONDS=259200
+STUDIO_OWNER_NAME=你的名字        # 留言作者标识
+STUDIO_SESSION_TTL_SECONDS=259200  # 会话有效期（秒）
+
+# 以下两项为高级配置，不填也行，会自动用 STUDIO_ADMIN_TOKEN 代替
+# STUDIO_SESSION_SECRET=随机字符串  # cookie 加密密钥
+# STUDIO_ADMIN_TOKEN_HASH=sha256:盐:哈希值  # 密码哈希版，比明文更安全
 ```
 
 ### 5.3 安装依赖并构建
