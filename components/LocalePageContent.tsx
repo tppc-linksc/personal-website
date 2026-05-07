@@ -39,7 +39,7 @@ export function LocalePageContent({
             <h1 className="mt-3 text-4xl font-semibold leading-[1.08] text-[var(--text-main)] md:text-6xl" style={{ whiteSpace: "pre-line" }}>
               {locale === "zh" ? content.hero.title.zh : content.hero.title.en}
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-8 text-[var(--text-muted)]">
+            <p className="mt-5 max-w-xl text-base leading-8 text-[var(--text-muted)]" style={{ whiteSpace: "pre-line" }}>
               {locale === "zh" ? content.hero.summary.zh : content.hero.summary.en}
             </p>
 

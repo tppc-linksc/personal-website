@@ -45,4 +45,6 @@ next-env.d.ts
 
 # runtime data (auto-generated on first run)
 data/messages.json
+data/visits.json
+public/uploads/
 
