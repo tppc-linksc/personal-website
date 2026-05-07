@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { InteractiveHeroScene } from "@/components/InteractiveHeroScene";
 import { ProjectCard } from "@/components/ProjectCard";
+import { SiteHeader } from "@/components/SiteHeader";
 import { VisitCounter } from "@/components/VisitCounter";
 import { useSiteContent } from "@/hooks/use-site-content";
 import type { Dictionary, Locale } from "@/lib/i18n";
@@ -30,6 +31,8 @@ export function LocalePageContent({
 
   return (
     <>
+      <SiteHeader locale={locale} brand={content.brand.name} />
+
       <section className="glass-panel hero-fusion-panel relative mt-4 min-h-[520px] overflow-hidden rounded-[30px] px-5 py-6 md:min-h-[520px] md:px-8 md:py-8 xl:min-h-[560px]">
         <InteractiveHeroScene />
         <div className="relative z-10 max-w-[48rem] pt-2 md:max-w-[52%] md:pt-8 xl:max-w-[46%]">

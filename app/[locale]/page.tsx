@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { LocalePageContent } from "@/components/LocalePageContent";
-import { SiteHeader } from "@/components/SiteHeader";
 import { getDictionary, isLocale, type Locale } from "@/lib/i18n";
 import { selectFeaturedProjects, sortProjects } from "@/lib/project-selection";
 import { getAllProjects } from "@/lib/projects-source";
@@ -38,11 +37,6 @@ export default async function LocalePage({ params }: LocalePageProps) {
   return (
     <main className={`min-h-screen px-3 py-4 text-[var(--text-main)] md:px-6 ${typedLocale === "zh" ? "locale-zh" : "locale-en"}`}>
       <div className="mx-auto max-w-7xl">
-        <SiteHeader
-          locale={typedLocale}
-          brand="tppc_linksc(和小冋)"
-        />
-
         <LocalePageContent
           locale={typedLocale}
           dict={dict}

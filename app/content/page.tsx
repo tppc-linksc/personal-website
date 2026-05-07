@@ -69,10 +69,9 @@ export default function ContentPage() {
       setSaved(true);
       setTimeout(() => {
         router.push("/zh");
-      }, 1000);
+      }, 1500);
     } catch {
       alert("保存失败");
-    } finally {
       setSaving(false);
     }
   }
@@ -366,7 +365,7 @@ export default function ContentPage() {
 
             <div className="flex items-center gap-3">
               {saved && (
-                <span className="text-sm text-green-500">已保存</span>
+                <span className="text-sm text-green-500">已保存，跳转中...</span>
               )}
               <button
                 type="button"
