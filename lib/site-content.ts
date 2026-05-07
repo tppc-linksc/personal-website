@@ -67,6 +67,10 @@ export function getContent(): SiteContent {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
 
+    if (stored === lastStoredString && cachedContent) {
+      return cachedContent;
+    }
+
     if (stored) {
       const parsed = JSON.parse(stored) as Partial<SiteContent>;
       cachedContent = {
