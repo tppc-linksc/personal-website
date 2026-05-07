@@ -66,11 +66,6 @@ export function getContent(): SiteContent {
 
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    
-    // 返回缓存的内容，避免无限循环
-    if (stored === lastStoredString && cachedContent) {
-      return cachedContent;
-    }
 
     if (stored) {
       const parsed = JSON.parse(stored) as Partial<SiteContent>;
