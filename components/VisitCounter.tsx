@@ -65,7 +65,7 @@ export function VisitCounter({ locale, variant = "pill" }: VisitCounterProps) {
   }, []);
 
   if (visits === null) {
-    return null;
+    return <span className="opacity-0">-</span>;
   }
 
   const formatted = new Intl.NumberFormat(locale === "zh" ? "zh-CN" : "en-US").format(visits);

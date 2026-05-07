@@ -32,16 +32,32 @@ export function ImageUpload({
         return;
       }
 
-      if (file.size > 2 * 1024 * 1024) {
-        alert("图片大小不能超过 2MB");
+      if (file.size > 5 * 1024 * 1024) {
+        alert("图片大小不能超过 5MB");
         return;
       }
 
       const reader = new FileReader();
       reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setPreview(result);
-        onChange(result);
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX = 800;
+          let w = img.width;
+          let h = img.height;
+          if (w > MAX || h > MAX) {
+            const ratio = Math.min(MAX / w, MAX / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+          const compressed = canvas.toDataURL("image/jpeg", 0.7);
+          setPreview(compressed);
+          onChange(compressed);
+        };
+        img.src = e.target?.result as string;
       };
       reader.readAsDataURL(file);
     },

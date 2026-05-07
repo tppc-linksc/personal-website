@@ -93,6 +93,11 @@ export function getContent(): SiteContent {
   return defaultContent;
 }
 
+export function invalidateContentCache(): void {
+  cachedContent = null;
+  lastStoredString = null;
+}
+
 export function setContent(content: SiteContent): void {
   if (typeof window === "undefined") {
     return;
