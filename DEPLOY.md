@@ -181,11 +181,14 @@ cp .env.example .env
 vim .env
 ```
 
-填入：
+填入（只需填第一行，其余可选）：
 ```env
-STUDIO_ADMIN_TOKEN=你的管理员密码
-STUDIO_SESSION_SECRET=随机字符串用于会话加密
+# 必填：管理员登录密码
+STUDIO_ADMIN_TOKEN=你的密码
+
+# 可选
 STUDIO_OWNER_NAME=你的名字
+STUDIO_SESSION_TTL_SECONDS=259200
 ```
 
 ### 5.3 安装依赖并构建

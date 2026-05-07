@@ -258,11 +258,11 @@ npm run studio:hash -- "your-token"
 
 | 变量名 | 必需 | 说明 | 默认值 |
 |--------|------|------|--------|
-| `STUDIO_ADMIN_TOKEN` | 否 | 管理员明文 Token | - |
-| `STUDIO_ADMIN_TOKEN_HASH` | 否 | 管理员哈希 Token | - |
-| `STUDIO_SESSION_SECRET` | 否 | 会话签名密钥 | - |
-| `STUDIO_SESSION_TTL_SECONDS` | 否 | 会话有效期（秒） | 259200 |
+| `STUDIO_ADMIN_TOKEN` | 是 | 管理员登录密码 | - |
 | `STUDIO_OWNER_NAME` | 否 | 管理员名称 | Author |
+| `STUDIO_ADMIN_TOKEN_HASH` | 否 | 管理员哈希 Token | - |
+| `STUDIO_SESSION_SECRET` | 否 | 会话签名密钥 | 使用 ADMIN_TOKEN |
+| `STUDIO_SESSION_TTL_SECONDS` | 否 | 会话有效期（秒） | 259200 |
 
 ## 数据存储
 
