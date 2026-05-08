@@ -1,6 +1,6 @@
 "use client";
 
-import { formatTime } from "./message-board-types";
+import { formatTime } from "@/lib/format-time";
 import type { MessageCardProps } from "./message-board-types";
 
 export function MessageCard({ item, locale, dict, replyTo, onReply }: MessageCardProps) {

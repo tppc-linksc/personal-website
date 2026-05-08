@@ -151,8 +151,17 @@ export function MessageBoard({ slug, locale, dict }: MessageBoardProps) {
     const timer = window.setTimeout(() => {
       void loadMessages();
     }, 0);
+
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) {
+        void loadMessages();
+      }
+    }
+    window.addEventListener("pageshow", onPageShow);
+
     return () => {
       window.clearTimeout(timer);
+      window.removeEventListener("pageshow", onPageShow);
     };
   }, [loadMessages]);
 

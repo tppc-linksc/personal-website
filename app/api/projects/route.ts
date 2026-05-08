@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { ProjectItem, ProjectVisibility } from "@/lib/projects";
 import { getAllProjects } from "@/lib/projects-source";
 import { isStudioAuthorized, STUDIO_SESSION_COOKIE } from "@/lib/studio-auth";
 

@@ -58,14 +58,22 @@ export function VisitCounter({ locale, variant = "pill" }: VisitCounterProps) {
       }
     }, 60_000);
 
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) {
+        void syncVisits();
+      }
+    }
+    window.addEventListener("pageshow", onPageShow);
+
     return () => {
       active = false;
       window.clearInterval(interval);
+      window.removeEventListener("pageshow", onPageShow);
     };
   }, []);
 
   if (visits === null) {
-    return <span className="opacity-0">-</span>;
+    return <span aria-hidden="true" className="opacity-0">-</span>;
   }
 
   const formatted = new Intl.NumberFormat(locale === "zh" ? "zh-CN" : "en-US").format(visits);

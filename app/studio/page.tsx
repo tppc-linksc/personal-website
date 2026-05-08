@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ProjectItem } from "@/lib/projects";
 import { ProjectList } from "@/components/studio/ProjectList";
 import { BasicTab } from "@/components/studio/BasicTab";
@@ -104,8 +104,17 @@ export default function StudioPage() {
     const timer = window.setTimeout(() => {
       void loadProjects();
     }, 0);
+
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) {
+        void loadProjects();
+      }
+    }
+    window.addEventListener("pageshow", onPageShow);
+
     return () => {
       window.clearTimeout(timer);
+      window.removeEventListener("pageshow", onPageShow);
     };
   }, [loadProjects]);
 

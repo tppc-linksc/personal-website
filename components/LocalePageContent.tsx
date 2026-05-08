@@ -6,7 +6,7 @@ import { InteractiveHeroScene } from "@/components/InteractiveHeroScene";
 import { ProjectCard } from "@/components/ProjectCard";
 import { SiteHeader } from "@/components/SiteHeader";
 import { VisitCounter } from "@/components/VisitCounter";
-import { useSiteContent } from "@/hooks/use-site-content";
+import type { SiteContent } from "@/lib/site-content-types";
 import type { Dictionary, Locale } from "@/lib/i18n";
 import type { ProjectItem } from "@/lib/projects";
 import { t } from "@/lib/projects";
@@ -15,6 +15,7 @@ import { projectRouteDate } from "@/lib/project-selection";
 interface LocalePageContentProps {
   locale: Locale;
   dict: Dictionary;
+  content: SiteContent;
   projects: ProjectItem[];
   featuredProjects: ProjectItem[];
   showMore: boolean;
@@ -23,11 +24,11 @@ interface LocalePageContentProps {
 export function LocalePageContent({
   locale,
   dict,
+  content,
   projects,
   featuredProjects,
   showMore,
 }: LocalePageContentProps) {
-  const content = useSiteContent();
 
   return (
     <>
