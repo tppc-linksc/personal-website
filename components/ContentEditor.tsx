@@ -16,12 +16,15 @@ export function ContentEditor({ initialContent }: ContentEditorProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const dirtyRef = useRef(false);
 
   useEffect(() => {
     setContentState(initialContent);
+    dirtyRef.current = false;
   }, [initialContent]);
 
   const syncFromServer = useCallback(async () => {
+    if (dirtyRef.current) return;
     try {
       const res = await fetch("/api/site-content", { cache: "no-store" });
       const json = (await res.json()) as { content?: SiteContent };
@@ -56,6 +59,7 @@ export function ContentEditor({ initialContent }: ContentEditorProps) {
   }, []);
 
   function updateHero(field: keyof SiteContent["hero"], lang: "zh" | "en", value: string) {
+    dirtyRef.current = true;
     setContentState((prev) => ({
       ...prev,
       hero: {
@@ -68,6 +72,7 @@ export function ContentEditor({ initialContent }: ContentEditorProps) {
   }
 
   function updateHeroUrl(field: "ctaPrimaryUrl" | "ctaSecondaryUrl", value: string) {
+    dirtyRef.current = true;
     setContentState((prev) => ({
       ...prev,
       hero: { ...prev.hero, [field]: value },
@@ -75,6 +80,7 @@ export function ContentEditor({ initialContent }: ContentEditorProps) {
   }
 
   function updateAbout(field: keyof SiteContent["about"], value: string | string[]) {
+    dirtyRef.current = true;
     setContentState((prev) => ({
       ...prev,
       about: { ...prev.about, [field]: value },
@@ -82,6 +88,7 @@ export function ContentEditor({ initialContent }: ContentEditorProps) {
   }
 
   function updateAboutText(field: "title" | "description", lang: "zh" | "en", value: string) {
+    dirtyRef.current = true;
     setContentState((prev) => ({
       ...prev,
       about: {
@@ -92,6 +99,7 @@ export function ContentEditor({ initialContent }: ContentEditorProps) {
   }
 
   function updateBrand(value: string) {
+    dirtyRef.current = true;
     setContentState((prev) => ({
       ...prev,
       brand: { ...prev.brand, name: value },
@@ -118,6 +126,7 @@ export function ContentEditor({ initialContent }: ContentEditorProps) {
 
       setSaved(true);
       setSaving(false);
+      dirtyRef.current = false;
       setTimeout(() => {
         router.push("/");
       }, 1500);
@@ -131,6 +140,7 @@ export function ContentEditor({ initialContent }: ContentEditorProps) {
     if (confirm("确定要重置为默认内容吗？")) {
       const reset = { ...defaultContent };
       setContentState(reset);
+      dirtyRef.current = false;
       setError("");
       fetch("/api/site-content", {
         method: "POST",

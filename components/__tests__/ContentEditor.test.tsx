@@ -155,6 +155,34 @@ describe("ContentEditor", () => {
     expect(screen.getByText("技能标签")).toBeInTheDocument();
   });
 
+  it("does not overwrite unsaved edits on bfcache restore", async () => {
+    const user = userEvent.setup();
+    render(<ContentEditor initialContent={defaultContent} />);
+
+    // Make an edit without saving
+    const brandInput = screen.getByPlaceholderText("品牌名称");
+    await user.clear(brandInput);
+    await user.type(brandInput, "My Unsaved Edit");
+
+    expect((brandInput as HTMLInputElement).value).toBe("My Unsaved Edit");
+
+    // Server content changes (simulating another tab or deployment)
+    store.siteContent = {
+      ...defaultContent,
+      brand: { name: "Server Overwrite Attempt" },
+    };
+
+    // Simulate tab switch → visibilitychange would fire syncFromServer
+    // but since we made edits (dirtyRef=true), it should NOT overwrite
+    simulateBfcacheRestore();
+
+    // The edit should be preserved
+    await waitFor(() => {
+      const input = screen.getByPlaceholderText("品牌名称") as HTMLInputElement;
+      expect(input.value).toBe("My Unsaved Edit");
+    });
+  });
+
   it("renders hero section fields", () => {
     render(<ContentEditor initialContent={defaultContent} />);
     expect(screen.getByText("Hero 区域")).toBeInTheDocument();
