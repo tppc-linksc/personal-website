@@ -43,10 +43,14 @@ nextjs.log
 next-env.d.ts
 .claude/settings.local.json
 
+# testing
+/test-results/
+
 # runtime data (auto-generated on first run)
 data/messages.json
 data/visits.json
 data/site-content.json
+data/rate-limits.json
 data/messages-export.json
 data/projects-export.json
 public/uploads/

@@ -152,7 +152,6 @@ personal-website/
 │   ├── messages-source.ts        # 留言数据源
 │   ├── i18n.ts                   # 国际化配置
 │   ├── site-content.ts           # 网站内容配置（版本化 localStorage）
-│   ├── github-stars.ts           # GitHub Stars 获取
 │   ├── project-selection.ts      # 项目筛选排序
 │   ├── studio-auth.ts            # Studio 认证（HMAC 会话）
 │   └── rate-limit.ts             # 文件级限流
@@ -165,7 +164,9 @@ personal-website/
 ├── package.json                  # 项目配置
 ├── tsconfig.json                 # TypeScript 配置
 ├── next.config.ts                # Next.js 配置
-├── tailwind.config.ts            # Tailwind 配置
+├── vitest.config.ts              # 测试配置（单测 + 组件测试）
+├── playwright.config.ts          # E2E 测试配置
+├── .prettierrc                   # 代码格式化配置
 └── .env.example                  # 环境变量示例
 ```
 
@@ -273,6 +274,21 @@ npm run lint
 
 # 生成 Studio Token 哈希
 npm run studio:hash -- "your-token"
+
+# 运行单元测试 + API 测试 + 组件测试
+npm test
+
+# 监听模式
+npm run test:watch
+
+# 测试覆盖率
+npm run test:coverage
+
+# E2E 测试（需先启动 dev server）
+npm run test:e2e
+
+# E2E 测试 UI 模式
+npm run test:e2e:ui
 ```
 
 ## 环境变量说明
