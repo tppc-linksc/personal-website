@@ -6,6 +6,8 @@ import { cloneLocalProjects, type ProjectItem } from "@/lib/projects";
 type ProjectRow = { data: string };
 type CreatedAtRow = { created_at: number };
 
+let seeded = false;
+
 function seedFromStatic(): void {
   const projects = cloneLocalProjects();
   const now = Date.now();
@@ -21,10 +23,12 @@ function seedFromStatic(): void {
 }
 
 function ensureSeeded(): void {
+  if (seeded) return;
   const count = db.prepare("SELECT COUNT(*) AS c FROM projects").get() as { c: number };
   if (count.c === 0) {
     seedFromStatic();
   }
+  seeded = true;
 }
 
 export function getAllProjects(): ProjectItem[] {

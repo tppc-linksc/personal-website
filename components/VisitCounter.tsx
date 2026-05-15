@@ -73,7 +73,13 @@ export function VisitCounter({ locale, variant = "pill" }: VisitCounterProps) {
   }, []);
 
   if (visits === null) {
-    return <span aria-hidden="true" className="opacity-0">-</span>;
+    return (
+      <span className="inline-flex items-center gap-1" aria-label="加载中">
+        <span className="h-3 w-6 animate-pulse rounded bg-[var(--line-muted)]" />
+        <span className="h-3 w-12 animate-pulse rounded bg-[var(--line-muted)]" />
+        <span className="h-3 w-4 animate-pulse rounded bg-[var(--line-muted)]" />
+      </span>
+    );
   }
 
   const formatted = new Intl.NumberFormat(locale === "zh" ? "zh-CN" : "en-US").format(visits);

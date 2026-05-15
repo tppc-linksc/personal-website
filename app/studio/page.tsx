@@ -52,6 +52,7 @@ export default function StudioPage() {
   const [studioAuthorized, setStudioAuthorized] = useState(false);
   const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [selectedSlug, setSelectedSlug] = useState<string>("");
+  const [showEditor, setShowEditor] = useState(false);
   const [draft, setDraft] = useState<ProjectItem>(cloneProject(emptyProject));
   const [techInput, setTechInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -88,6 +89,7 @@ export default function StudioPage() {
 
   function selectProject(project: ProjectItem) {
     setSelectedSlug(project.slug);
+    setShowEditor(true);
   }
 
   const loadProjects = useCallback(async () => {
@@ -104,7 +106,15 @@ export default function StudioPage() {
 
       const list = json.projects ?? [];
       setStudioAuthorized(Boolean(json.studioAuthorized));
-      setProjects(list);
+      setProjects(
+        [...list].sort((a, b) => {
+          const dateA = a.startDate ?? "";
+          const dateB = b.startDate ?? "";
+          const cmp = dateB.localeCompare(dateA);
+          if (cmp !== 0) return cmp;
+          return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
+        })
+      );
     } catch (error) {
       showMessage(error instanceof Error ? error.message : "加载失败", "error");
     }
@@ -167,6 +177,7 @@ export default function StudioPage() {
       true
     );
     setSelectedSlug("");
+    setShowEditor(false);
   }
 
   function handleSeed() {
@@ -175,6 +186,7 @@ export default function StudioPage() {
 
   function handleNewProject() {
     setSelectedSlug("");
+    setShowEditor(true);
     setTab("basic");
   }
 
@@ -288,78 +300,82 @@ export default function StudioPage() {
               onSelect={selectProject}
             />
 
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                disabled={loading || uploading}
-                onClick={handleSaveDraft}
-                className="rounded-xl border border-[var(--warning-border)] bg-[var(--warning-soft)] px-4 py-2 text-sm text-[var(--warning-text)] transition disabled:opacity-50"
-              >
-                {loading ? "保存中..." : "保存草稿"}
-              </button>
-              <button
-                type="button"
-                disabled={loading || uploading}
-                onClick={handlePublish}
-                className="rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] px-4 py-2 text-sm text-[var(--accent-text)] transition disabled:opacity-50"
-              >
-                {loading ? "发布中..." : "发布项目"}
-              </button>
-              {selectedSlug && (
+            {showEditor && (
+              <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
                   disabled={loading || uploading}
-                  onClick={handleDelete}
-                  className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-2 text-sm text-[var(--danger-text)] transition disabled:opacity-50"
+                  onClick={handleSaveDraft}
+                  className="rounded-xl border border-[var(--warning-border)] bg-[var(--warning-soft)] px-4 py-2 text-sm text-[var(--warning-text)] transition disabled:opacity-50"
                 >
-                  {loading ? "删除中..." : "删除项目"}
+                  {loading ? "保存中..." : "保存草稿"}
                 </button>
-              )}
-            </div>
+                <button
+                  type="button"
+                  disabled={loading || uploading}
+                  onClick={handlePublish}
+                  className="rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] px-4 py-2 text-sm text-[var(--accent-text)] transition disabled:opacity-50"
+                >
+                  {loading ? "发布中..." : "发布项目"}
+                </button>
+                {selectedSlug && (
+                  <button
+                    type="button"
+                    disabled={loading || uploading}
+                    onClick={handleDelete}
+                    className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-2 text-sm text-[var(--danger-text)] transition disabled:opacity-50"
+                  >
+                    {loading ? "删除中..." : "删除项目"}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
-          <section className="surface-panel rounded-2xl p-4 md:p-5">
-            <div className="mb-5 flex flex-wrap gap-2">
-              {[
-                { key: "basic", label: "1) 基础信息" },
-                { key: "content", label: "2) 内容信息" },
-                { key: "publish", label: "3) 发布信息" },
-              ].map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => setTab(item.key as StudioTab)}
-                  className={`rounded-full border px-3 py-1.5 text-xs transition ${
-                    tab === item.key
-                      ? "border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--accent-text)]"
-                      : "shadow-sm border-[var(--line-muted)] bg-[var(--button-bg)] text-[var(--text-muted)]"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
+          {showEditor && (
+            <section className="surface-panel rounded-2xl p-4 md:p-5">
+              <div className="mb-5 flex flex-wrap gap-2">
+                {[
+                  { key: "basic", label: "1) 基础信息" },
+                  { key: "content", label: "2) 内容信息" },
+                  { key: "publish", label: "3) 发布信息" },
+                ].map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setTab(item.key as StudioTab)}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                      tab === item.key
+                        ? "border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--accent-text)]"
+                        : "shadow-sm border-[var(--line-muted)] bg-[var(--button-bg)] text-[var(--text-muted)]"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
 
-            {tab === "basic" && <BasicTab draft={draft} onFieldChange={applyField} />}
+              {tab === "basic" && <BasicTab draft={draft} onFieldChange={applyField} />}
 
-            {tab === "content" && (
-              <ContentTab
-                draft={draft}
-                techInput={techInput}
-                onTechInputChange={setTechInput}
-                onFieldChange={applyField}
-              />
-            )}
+              {tab === "content" && (
+                <ContentTab
+                  draft={draft}
+                  techInput={techInput}
+                  onTechInputChange={setTechInput}
+                  onFieldChange={applyField}
+                />
+              )}
 
-            {tab === "publish" && (
-              <PublishTab
-                draft={draft}
-                uploading={uploading}
-                onFieldChange={applyField}
-                onUpload={(file) => void uploadCover(file)}
-              />
-            )}
-          </section>
+              {tab === "publish" && (
+                <PublishTab
+                  draft={draft}
+                  uploading={uploading}
+                  onFieldChange={applyField}
+                  onUpload={(file) => void uploadCover(file)}
+                />
+              )}
+            </section>
+          )}
         </div>
       </div>
     </main>

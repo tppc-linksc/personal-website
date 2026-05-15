@@ -30,20 +30,29 @@ export function PublishTab({
 
         <label className="text-sm">
           <div className="mb-1 text-[var(--text-muted)]">上传封面图</div>
-          <input
-            type="file"
-            accept="image/*"
-            disabled={uploading}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                onUpload(file);
-              }
-            }}
-            className="w-full rounded-xl border border-[var(--line)] bg-[var(--button-bg)] px-3 py-2 disabled:opacity-50"
-          />
+          {uploading ? (
+            <div className="flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--button-bg)] px-3 py-3 text-sm text-[var(--text-muted)]">
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span>上传中...</span>
+            </div>
+          ) : (
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  onUpload(file);
+                }
+              }}
+              className="w-full rounded-xl border border-[var(--line)] bg-[var(--button-bg)] px-3 py-2"
+            />
+          )}
           <div className="mt-2 text-xs text-[var(--text-soft)]">
-            {uploading ? "上传中..." : "上传后自动写入 cover 字段"}
+            {uploading ? "正在上传并处理封面图" : "上传后自动写入 cover 字段"}
           </div>
         </label>
       </div>
