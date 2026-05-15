@@ -39,29 +39,29 @@ export default function StudioLoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#070913] px-4 py-8 text-zinc-100 md:px-8">
-      <div className="mx-auto mt-16 max-w-md rounded-2xl border border-white/12 bg-white/[0.03] p-6 backdrop-blur">
+    <main className="min-h-screen px-4 py-8 md:px-8">
+      <div className="mx-auto mt-16 max-w-md rounded-2xl border border-[var(--line)] bg-[var(--panel-bg)] p-6 backdrop-blur shadow-[var(--shadow)]">
         <h1 className="text-xl font-semibold">Studio Login</h1>
-        <p className="mt-2 text-sm text-zinc-300">输入 `STUDIO_ADMIN_TOKEN` 进入项目管理后台。</p>
+        <p className="mt-2 text-sm text-[var(--text-muted)]">输入 `STUDIO_ADMIN_TOKEN` 进入项目管理后台。</p>
 
         <form className="mt-5 space-y-3" onSubmit={handleSubmit}>
           <input
             value={token}
             onChange={(e) => setToken(e.target.value)}
             placeholder="STUDIO_ADMIN_TOKEN"
-            className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-sm outline-none ring-cyan-300/60 focus:ring"
+            className="w-full rounded-xl border border-[var(--line)] bg-[var(--button-bg)] px-3 py-2 text-sm outline-none ring-[var(--accent-border)] focus:ring"
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl border border-cyan-300/70 bg-cyan-300/10 px-4 py-2 text-sm text-cyan-100 transition hover:bg-cyan-300/20 disabled:opacity-50"
+            className="w-full rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] px-4 py-2 text-sm text-[var(--accent-text)] transition hover:bg-[var(--accent-soft)] disabled:opacity-50"
           >
             {loading ? "登录中..." : "登录"}
           </button>
         </form>
 
-        {message && <p className="mt-3 text-sm text-red-200">{message}</p>}
+        {message && <p className="mt-3 text-sm text-[var(--danger-text)]">{message}</p>}
       </div>
     </main>
   );

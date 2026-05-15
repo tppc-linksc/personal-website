@@ -112,6 +112,7 @@ describe("GET /api/projects/[slug]/messages", () => {
     expect(res.status).toBe(200);
     expect(json.messages).toHaveLength(1);
     expect(json.canPostAsOwner).toBe(false);
+    expect(mockGetProjectBySlug).toHaveBeenCalledWith("test", { includeDraft: false });
   });
 
   it("sets canPostAsOwner true when authorized", async () => {
@@ -122,6 +123,7 @@ describe("GET /api/projects/[slug]/messages", () => {
     const json = (await res.json()) as { canPostAsOwner: boolean };
 
     expect(json.canPostAsOwner).toBe(true);
+    expect(mockGetProjectBySlug).toHaveBeenCalledWith("test", { includeDraft: true });
   });
 
   it("returns 500 on error", async () => {
@@ -210,6 +212,7 @@ describe("POST /api/projects/[slug]/messages", () => {
         authorType: "guest",
       })
     );
+    expect(mockGetProjectBySlug).toHaveBeenCalledWith("test", { includeDraft: false });
   });
 
   it("creates message with owner authorType when authorized", async () => {
@@ -228,6 +231,7 @@ describe("POST /api/projects/[slug]/messages", () => {
     expect(mockCreateMessage).toHaveBeenCalledWith(
       expect.objectContaining({ authorType: "owner" })
     );
+    expect(mockGetProjectBySlug).toHaveBeenCalledWith("test", { includeDraft: true });
   });
 
   it("returns 500 on error", async () => {

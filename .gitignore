@@ -53,5 +53,8 @@ data/site-content.json
 data/rate-limits.json
 data/messages-export.json
 data/projects-export.json
+data/portfolio.sqlite
+data/portfolio.sqlite-wal
+data/portfolio.sqlite-shm
 public/uploads/
 

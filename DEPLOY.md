@@ -110,6 +110,12 @@ apt update && apt upgrade -y
 
 # 安装必要工具
 apt install -y curl wget git unzip build-essential
+
+# better-sqlite3 需要 native module 构建环境
+apt install -y python3
+
+# 生产排障和数据校验会用到 sqlite3 CLI
+apt install -y sqlite3
 ```
 
 ### 4.2 安装 Node.js 20
@@ -186,6 +192,9 @@ vim .env
 # 必填：管理员登录密码
 STUDIO_ADMIN_TOKEN=你的密码
 
+# 必填：生产运行时数据目录（SQLite 数据库会写到这里）
+PORTFOLIO_DATA_DIR=/var/lib/personal-website
+
 # 可选
 STUDIO_OWNER_NAME=你的名字        # 留言作者标识
 STUDIO_SESSION_TTL_SECONDS=259200  # 会话有效期（秒）
@@ -195,14 +204,40 @@ STUDIO_SESSION_TTL_SECONDS=259200  # 会话有效期（秒）
 # STUDIO_ADMIN_TOKEN_HASH=sha256:盐:哈希值  # 密码哈希版，比明文更安全
 ```
 
-### 5.3 安装依赖并构建
+### 5.3 创建运行时数据目录
+
+运行时数据不要放在项目目录里。SQLite 数据库、WAL 文件和后续上传目录统一放到 `/var/lib/personal-website`：
 
 ```bash
-npm install
-npm run build
+sudo mkdir -p /var/lib/personal-website/uploads
+sudo chown -R $USER:$USER /var/lib/personal-website
+chmod 700 /var/lib/personal-website
 ```
 
-### 5.4 配置 nginx 反向代理
+当前第一阶段运行时数据：
+
+| 数据 | 存储位置 |
+|------|----------|
+| 留言 | `/var/lib/personal-website/portfolio.sqlite` |
+| 访问计数 | `/var/lib/personal-website/portfolio.sqlite` |
+| 首页内容 | `/var/lib/personal-website/portfolio.sqlite` |
+| 限流记录 | `/var/lib/personal-website/portfolio.sqlite` |
+
+### 5.4 安装依赖、构建并迁移数据
+
+```bash
+# 确保当前 shell 带有生产数据目录
+export PORTFOLIO_DATA_DIR=/var/lib/personal-website
+
+# 推荐生产使用 npm ci
+npm ci
+npm run build
+
+# 首次迁移旧 JSON 数据到 SQLite；如果没有旧数据，也可以执行，脚本会跳过空数据
+node scripts/migrate-json-to-sqlite.mjs
+```
+
+### 5.5 配置 nginx 反向代理
 
 ```bash
 vim /etc/nginx/sites-available/personal-website
@@ -217,13 +252,6 @@ server {
     # 日志
     access_log /var/log/nginx/personal-website-access.log;
     error_log /var/log/nginx/personal-website-error.log;
-
-    # 上传图片和静态资源
-    location /uploads/ {
-        alias /home/website/public/uploads/;
-        expires 30d;
-        add_header Cache-Control "public, immutable";
-    }
 
     # 静态资源缓存
     location /_next/static/ {
@@ -258,10 +286,13 @@ nginx -t
 systemctl reload nginx
 ```
 
-### 5.5 启动应用
+### 5.6 启动应用
 
 ```bash
 cd /home/website
+
+# 确保 PM2 进程继承生产数据目录
+export PORTFOLIO_DATA_DIR=/var/lib/personal-website
 
 # PM2 启动
 pm2 start npm --name "personal-website" -- start
@@ -273,9 +304,32 @@ pm2 status
 pm2 save
 ```
 
-### 5.6 验证
+如果你使用 PM2 ecosystem 文件，建议在 `env` 中固定：
+
+```js
+env: {
+  NODE_ENV: "production",
+  PORTFOLIO_DATA_DIR: "/var/lib/personal-website"
+}
+```
+
+修改环境变量后重启：
+
+```bash
+pm2 restart personal-website --update-env
+pm2 save
+```
+
+### 5.7 验证
 
 浏览器访问 `http://yourdomain.com`，应该能看到网站首页。
+
+检查 SQLite：
+
+```bash
+sqlite3 /var/lib/personal-website/portfolio.sqlite ".tables"
+sqlite3 /var/lib/personal-website/portfolio.sqlite "select * from metrics;"
+```
 
 ---
 
@@ -312,11 +366,15 @@ cd /home/website
 git pull
 
 # 重新构建
-npm install
+export PORTFOLIO_DATA_DIR=/var/lib/personal-website
+npm ci
 npm run build
 
+# 如果本次更新包含数据迁移脚本变化，执行一次迁移脚本
+node scripts/migrate-json-to-sqlite.mjs
+
 # 重启应用
-pm2 restart personal-website
+pm2 restart personal-website --update-env
 ```
 
 ### 7.2 查看日志
@@ -332,13 +390,19 @@ tail -f /var/log/nginx/personal-website-error.log
 
 ### 7.3 备份数据
 
-网站所有数据都在项目中，备份整个目录即可：
+运行时数据在项目目录外，优先备份 SQLite 数据目录：
 
 ```bash
-# 备份到本地
-scp -r root@服务器IP:/home/website/data ./backup/
-scp root@服务器IP:/home/website/lib/projects.ts ./backup/
+# 服务器上先生成归档
+tar -czf /tmp/personal-website-data-$(date +%Y%m%d-%H%M%S).tar.gz /var/lib/personal-website
+
+# 本地拉取备份
+scp root@服务器IP:/tmp/personal-website-data-*.tar.gz ./backup/
 ```
+
+项目静态数据仍在代码里，尤其是 `lib/projects.ts`，正常通过 Git 管理即可。
+
+上传文件存储在 `/var/lib/personal-website/uploads/`，已包含在上面的数据目录备份中。
 
 ### 7.4 添加备案号
 

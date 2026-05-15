@@ -5,6 +5,8 @@ import { getMessageById, getMessageTreeByProject, createMessage } from "@/lib/me
 import { isStudioAuthorized, STUDIO_SESSION_COOKIE } from "@/lib/studio-auth";
 import { isRateLimited } from "@/lib/rate-limit";
 
+export const runtime = "nodejs";
+
 const MAX_CONTENT_LEN = 800;
 const MAX_NICKNAME_LEN = 40;
 const GUEST_RATE_LIMIT = 8;
@@ -34,15 +36,16 @@ function randomGuestNickname(): string {
 export async function GET(request: NextRequest, context: { params: Promise<{ slug: string }> }) {
   try {
     const { slug } = await context.params;
-    const project = await getProjectBySlug(slug, { includeDraft: true });
-    if (!project) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 });
-    }
 
     const authorized = await isStudioAuthorized({
       tokenHeader: request.headers.get("x-studio-token"),
       sessionCookie: request.cookies.get(STUDIO_SESSION_COOKIE)?.value,
     });
+
+    const project = await getProjectBySlug(slug, { includeDraft: authorized });
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
 
     const messages = await getMessageTreeByProject(slug);
     return NextResponse.json({
@@ -58,15 +61,16 @@ export async function GET(request: NextRequest, context: { params: Promise<{ slu
 export async function POST(request: NextRequest, context: { params: Promise<{ slug: string }> }) {
   try {
     const { slug } = await context.params;
-    const project = await getProjectBySlug(slug, { includeDraft: true });
-    if (!project) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 });
-    }
 
     const authorized = await isStudioAuthorized({
       tokenHeader: request.headers.get("x-studio-token"),
       sessionCookie: request.cookies.get(STUDIO_SESSION_COOKIE)?.value,
     });
+
+    const project = await getProjectBySlug(slug, { includeDraft: authorized });
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
 
     const body = (await request.json()) as {
       parentId?: unknown;
@@ -94,7 +98,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ sl
 
     if (!authorized) {
       const ipHash = hashIp(getClientIp(request));
-      if (isRateLimited(ipHash, GUEST_RATE_LIMIT, WINDOW_MS)) {
+      if (isRateLimited(ipHash, GUEST_RATE_LIMIT, WINDOW_MS, "guest-message")) {
         return NextResponse.json({ error: "Too many requests" }, { status: 429 });
       }
     }

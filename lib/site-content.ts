@@ -1,71 +1,41 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from "fs";
-import { join } from "path";
+import "server-only";
+
+import db from "@/lib/db";
 import type { SiteContent } from "@/lib/site-content-types";
 import { defaultContent } from "@/lib/site-content-types";
 
-const DATA_DIR = join(process.cwd(), "data");
-const CONTENT_FILE = join(DATA_DIR, "site-content.json");
 const STORAGE_VERSION = 1;
 
-interface StoragePayload {
-  __version: number;
-  data: SiteContent;
-}
+function readPayload(): SiteContent {
+  const row = db.prepare(`SELECT json FROM site_content WHERE key = 'main' AND version = ?`).get(STORAGE_VERSION) as { json: string } | undefined;
 
-function ensureDir(): void {
-  if (!existsSync(DATA_DIR)) {
-    mkdirSync(DATA_DIR, { recursive: true });
-  }
-}
-
-function createDefaultPayload(): StoragePayload {
-  return { __version: STORAGE_VERSION, data: structuredClone(defaultContent) };
-}
-
-function readPayload(): StoragePayload {
-  ensureDir();
-
-  if (!existsSync(CONTENT_FILE)) {
-    const payload = createDefaultPayload();
-    writeFileSync(CONTENT_FILE, JSON.stringify(payload, null, 2), "utf-8");
-    return payload;
-  }
+  if (!row) return structuredClone(defaultContent);
 
   try {
-    const raw = readFileSync(CONTENT_FILE, "utf-8");
-    const parsed = JSON.parse(raw) as Partial<StoragePayload>;
-
-    if (!parsed.data) {
-      return createDefaultPayload();
-    }
-
+    const parsed = JSON.parse(row.json) as Partial<SiteContent>;
     return {
-      __version: parsed.__version ?? 0,
-      data: {
-        hero: { ...defaultContent.hero, ...parsed.data.hero },
-        about: { ...defaultContent.about, ...parsed.data.about },
-        brand: { ...defaultContent.brand, ...parsed.data.brand },
-        footer: { ...defaultContent.footer, ...parsed.data.footer },
-      },
+      hero: { ...defaultContent.hero, ...parsed.hero },
+      about: { ...defaultContent.about, ...parsed.about },
+      brand: { ...defaultContent.brand, ...parsed.brand },
+      footer: { ...defaultContent.footer, ...parsed.footer },
     };
   } catch {
-    return createDefaultPayload();
+    return structuredClone(defaultContent);
   }
 }
 
 export function getContent(): SiteContent {
-  return structuredClone(readPayload().data);
+  return structuredClone(readPayload());
 }
 
 export function setContent(content: SiteContent): void {
-  ensureDir();
+  const json = JSON.stringify(content);
+  const now = Date.now();
 
-  const payload: StoragePayload = {
-    __version: STORAGE_VERSION,
-    data: content,
-  };
-
-  const tmp = `${CONTENT_FILE}.tmp`;
-  writeFileSync(tmp, JSON.stringify(payload, null, 2), "utf-8");
-  renameSync(tmp, CONTENT_FILE);
+  db.prepare(`
+    INSERT INTO site_content (key, version, json, updated_at)
+    VALUES ('main', ?, ?, ?)
+    ON CONFLICT(key)
+    DO UPDATE SET version = excluded.version, json = excluded.json, updated_at = excluded.updated_at
+  `).run(STORAGE_VERSION, json, now);
 }

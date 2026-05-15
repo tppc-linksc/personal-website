@@ -8,6 +8,8 @@ import {
 } from "@/lib/studio-auth";
 import { isRateLimited } from "@/lib/rate-limit";
 
+export const runtime = "nodejs";
+
 const LOGIN_RATE_LIMIT = 5;
 const LOGIN_WINDOW_MS = 60 * 1000;
 
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
-  if (isRateLimited(ip, LOGIN_RATE_LIMIT, LOGIN_WINDOW_MS)) {
+  if (isRateLimited(ip, LOGIN_RATE_LIMIT, LOGIN_WINDOW_MS, "login")) {
     return NextResponse.json({ error: "Too many login attempts" }, { status: 429 });
   }
 

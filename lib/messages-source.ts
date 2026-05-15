@@ -1,34 +1,28 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from "fs";
-import { join } from "path";
+import "server-only";
+
+import db from "@/lib/db";
 import { buildMessageTree, normalizeParentId, type MessageItem, type MessageNode, type MessageStatus } from "@/lib/messages";
 
-const DATA_FILE = join(process.cwd(), "data", "messages.json");
-
-function ensureDataDir(): void {
-  const dir = join(process.cwd(), "data");
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-}
-
-function loadMessages(): MessageItem[] {
-  try {
-    if (existsSync(DATA_FILE)) {
-      return JSON.parse(readFileSync(DATA_FILE, "utf-8")) as MessageItem[];
-    }
-  } catch { /* ignore */ }
-  return [];
-}
-
-function saveMessages(messages: MessageItem[]): void {
-  ensureDataDir();
-  const tempFile = `${DATA_FILE}.tmp`;
-  writeFileSync(tempFile, JSON.stringify(messages, null, 2), "utf-8");
-  renameSync(tempFile, DATA_FILE);
+function rowToMessage(row: Record<string, unknown>): MessageItem {
+  return {
+    id: row.id as string,
+    projectSlug: row.project_slug as string,
+    parentId: (row.parent_id as string) || undefined,
+    authorType: row.author_type as "guest" | "owner",
+    nickname: row.nickname as string,
+    content: row.content as string,
+    status: row.status as MessageStatus,
+    createdAt: row.created_at as number,
+  };
 }
 
 export async function getMessagesByProject(projectSlug: string, options?: { includeHidden?: boolean }): Promise<MessageItem[]> {
   const includeHidden = Boolean(options?.includeHidden);
-  const rows = loadMessages().filter((item) => item.projectSlug === projectSlug);
-  return includeHidden ? rows : rows.filter((item) => item.status === "approved");
+  const sql = includeHidden
+    ? `SELECT * FROM messages WHERE project_slug = ? ORDER BY created_at ASC`
+    : `SELECT * FROM messages WHERE project_slug = ? AND status = 'approved' ORDER BY created_at ASC`;
+  const rows = db.prepare(sql).all(projectSlug) as Array<Record<string, unknown>>;
+  return rows.map(rowToMessage);
 }
 
 export async function getMessageTreeByProject(projectSlug: string): Promise<MessageNode[]> {
@@ -37,8 +31,8 @@ export async function getMessageTreeByProject(projectSlug: string): Promise<Mess
 }
 
 export async function getMessageById(projectSlug: string, id: string): Promise<MessageItem | undefined> {
-  const rows = await getMessagesByProject(projectSlug, { includeHidden: true });
-  return rows.find((item) => item.id === id);
+  const row = db.prepare(`SELECT * FROM messages WHERE project_slug = ? AND id = ?`).get(projectSlug, id) as Record<string, unknown> | undefined;
+  return row ? rowToMessage(row) : undefined;
 }
 
 export async function createMessage(input: {
@@ -50,8 +44,6 @@ export async function createMessage(input: {
   content: string;
   status?: MessageStatus;
 }): Promise<MessageItem> {
-  const messages = loadMessages();
-
   const message: MessageItem = {
     id: input.id,
     projectSlug: input.projectSlug,
@@ -63,17 +55,23 @@ export async function createMessage(input: {
     createdAt: Date.now(),
   };
 
-  messages.push(message);
-  saveMessages(messages);
+  db.prepare(`
+    INSERT INTO messages (id, project_slug, parent_id, author_type, nickname, content, status, created_at)
+    VALUES (@id, @projectSlug, @parentId, @authorType, @nickname, @content, @status, @createdAt)
+  `).run({
+    id: message.id,
+    projectSlug: message.projectSlug,
+    parentId: message.parentId ?? null,
+    authorType: message.authorType,
+    nickname: message.nickname,
+    content: message.content,
+    status: message.status,
+    createdAt: message.createdAt,
+  });
 
   return message;
 }
 
 export async function moderateMessage(id: string, status: MessageStatus): Promise<void> {
-  const messages = loadMessages();
-  const index = messages.findIndex((item) => item.id === id);
-  if (index >= 0) {
-    messages[index] = { ...messages[index], status };
-    saveMessages(messages);
-  }
+  db.prepare(`UPDATE messages SET status = ? WHERE id = ?`).run(status, id);
 }

@@ -45,6 +45,7 @@ function cloneProject(project: ProjectItem): ProjectItem {
 
 type StudioTab = "basic" | "content" | "publish";
 type VisibilityFilter = "all" | "draft" | "published";
+const STATIC_PROJECT_MODE = true;
 
 export default function StudioPage() {
   const [studioAuthorized, setStudioAuthorized] = useState(false);
@@ -118,7 +119,7 @@ export default function StudioPage() {
     };
   }, [loadProjects]);
 
-  async function postAction(payload: Record<string, unknown>, successMessage = "保存成功") {
+  async function postAction(payload: Record<string, unknown>) {
     setLoading(true);
     setMessage("");
 
@@ -130,12 +131,11 @@ export default function StudioPage() {
         },
         body: JSON.stringify(payload),
       });
-      const json = (await res.json()) as { error?: string };
+      const json = (await res.json()) as { ok?: boolean; message?: string; error?: string };
       if (!res.ok) {
         throw new Error(json.error ?? "操作失败");
       }
-      await loadProjects();
-      setMessage(successMessage);
+      setMessage(json.message ?? "操作成功");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "操作失败");
     } finally {
@@ -144,6 +144,11 @@ export default function StudioPage() {
   }
 
   async function uploadCover(file: File) {
+    if (STATIC_PROJECT_MODE) {
+      setMessage("静态模式下已禁用上传，请在 lib/projects.ts 中手动填写封面路径");
+      return;
+    }
+
     setUploading(true);
     setMessage("");
 
@@ -165,7 +170,7 @@ export default function StudioPage() {
       }
 
       applyField("cover", json.cover);
-      setMessage("封面上传成功，记得点击保存");
+      setMessage("封面上传成功，已写入 cover 字段");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "上传失败");
     } finally {
@@ -186,18 +191,18 @@ export default function StudioPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#070913] px-4 py-6 text-zinc-100 md:px-8">
+    <main className="min-h-screen px-4 py-6 md:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <header className="surface-panel rounded-2xl p-4 md:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-semibold">Studio · 项目管理</h1>
-              <p className="mt-2 text-sm text-zinc-300">三段式 CMS：分组表单、封面上传、草稿发布。保存后前台自动读取最新数据。</p>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">项目数据当前为只读静态模式，请直接修改 lib/projects.ts 后重新部署。</p>
             </div>
             <button
               type="button"
               onClick={() => void logout()}
-              className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm transition hover:border-cyan-300/70"
+              className="rounded-xl border border-[var(--line)] bg-[var(--button-bg)] px-4 py-2 text-sm transition hover:border-[var(--accent)]"
             >
               退出登录
             </button>
@@ -206,29 +211,31 @@ export default function StudioPage() {
           <div className="mt-4 flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => void postAction({ action: "seed" }, "示例数据已初始化")}
-              className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm transition hover:border-cyan-300/70"
+              disabled
+              onClick={() => void postAction({ action: "seed" })}
+              className="rounded-xl border border-[var(--line)] bg-[var(--panel-soft)] px-4 py-2 text-sm opacity-50"
             >
-              初始化示例数据
+              示例数据由代码维护
             </button>
             <button
               type="button"
+              disabled
               onClick={() => {
                 setSelectedSlug("");
                 setDraft(cloneProject(emptyProject));
                 setTechInput("");
                 setTab("basic");
               }}
-              className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm transition hover:border-cyan-300/70"
+              className="rounded-xl border border-[var(--line)] bg-[var(--panel-soft)] px-4 py-2 text-sm opacity-50"
             >
-              新建项目
+              新建项目需改代码
             </button>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-3 text-xs text-zinc-400">
+          <div className="mt-3 flex flex-wrap gap-3 text-xs text-[var(--text-soft)]">
             <div>Studio 会话：{studioAuthorized ? "已授权" : "未授权"}</div>
           </div>
-          {message && <div className="mt-2 text-sm text-cyan-200">{message}</div>}
+          {message && <div className="mt-2 text-sm text-[var(--accent-text)]">{message}</div>}
         </header>
 
         <div className="grid gap-6 md:grid-cols-[320px,1fr]">
@@ -253,8 +260,8 @@ export default function StudioPage() {
                   onClick={() => setTab(item.key as StudioTab)}
                   className={`rounded-full border px-3 py-1.5 text-xs transition ${
                     tab === item.key
-                      ? "border-cyan-300/70 bg-cyan-300/10 text-cyan-100"
-                      : "border-white/15 bg-white/[0.03] text-zinc-300"
+                      ? "border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--accent-text)]"
+                      : "border-[var(--line)] bg-[var(--panel-soft)] text-[var(--text-muted)]"
                   }`}
                 >
                   {item.label}
@@ -276,13 +283,14 @@ export default function StudioPage() {
             {tab === "publish" && (
               <PublishTab
                 draft={draft}
+                staticProjectMode={STATIC_PROJECT_MODE}
                 uploading={uploading}
                 loading={loading}
                 onFieldChange={applyField}
                 onUpload={(file) => void uploadCover(file)}
-                onSaveDraft={() => void postAction({ action: "upsert", project: { ...draft, visibility: "draft" } }, "草稿已保存")}
-                onPublish={() => void postAction({ action: "upsert", project: { ...draft, visibility: "published" } }, "项目已发布")}
-                onDelete={() => void postAction({ action: "delete", slug: draft.slug }, "项目已删除")}
+                onSaveDraft={() => void postAction({ action: "upsert", project: { ...draft, visibility: "draft" } })}
+                onPublish={() => void postAction({ action: "upsert", project: { ...draft, visibility: "published" } })}
+                onDelete={() => void postAction({ action: "delete", slug: draft.slug })}
               />
             )}
           </section>

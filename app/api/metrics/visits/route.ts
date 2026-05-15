@@ -1,40 +1,29 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from "fs";
-import { join } from "path";
 import { NextResponse } from "next/server";
+import db from "@/lib/db";
 
-const DATA_FILE = join(process.cwd(), "data", "visits.json");
-
-function readVisits(): { visits: number } {
-  try {
-    if (existsSync(DATA_FILE)) {
-      return JSON.parse(readFileSync(DATA_FILE, "utf-8")) as { visits: number };
-    }
-  } catch { /* ignore */ }
-  return { visits: 0 };
-}
-
-function writeVisits(data: { visits: number }): void {
-  const dir = join(process.cwd(), "data");
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  const tempFile = `${DATA_FILE}.tmp`;
-  writeFileSync(tempFile, JSON.stringify(data), "utf-8");
-  renameSync(tempFile, DATA_FILE);
-}
+export const runtime = "nodejs";
 
 export async function GET() {
-  const data = readVisits();
+  const row = db.prepare(`SELECT value FROM metrics WHERE key = 'visits'`).get() as { value: number } | undefined;
+  const visits = row?.value ?? 0;
   return NextResponse.json(
-    { visits: data.visits, enabled: true },
+    { visits, enabled: true },
     { headers: { "Cache-Control": "no-store" } }
   );
 }
 
 export async function POST() {
-  const data = readVisits();
-  data.visits += 1;
-  writeVisits(data);
+  const now = Date.now();
+  const result = db.prepare(`
+    INSERT INTO metrics (key, value, updated_at)
+    VALUES ('visits', 1, ?)
+    ON CONFLICT(key)
+    DO UPDATE SET value = value + 1, updated_at = excluded.updated_at
+    RETURNING value
+  `).get(now) as { value: number } | undefined;
+  const visits = result?.value ?? 0;
   return NextResponse.json(
-    { visits: data.visits, enabled: true },
+    { visits, enabled: true },
     { headers: { "Cache-Control": "no-store" } }
   );
 }

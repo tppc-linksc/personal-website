@@ -77,7 +77,7 @@ describe("POST /api/site-content", () => {
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(400);
-    expect(json.error).toBe("Invalid content");
+    expect(json.error).toBe("Invalid content structure");
   });
 
   it("returns 400 when content is not an object", async () => {
@@ -87,12 +87,30 @@ describe("POST /api/site-content", () => {
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(400);
-    expect(json.error).toBe("Invalid content");
+    expect(json.error).toBe("Invalid content structure");
   });
 
   it("returns 200 and saves content when authorized with valid body", async () => {
     mockIsStudioAuthorized.mockResolvedValue(true);
-    const content = { brand: { name: "Test Brand" } };
+    const content = {
+      hero: {
+        greeting: { zh: "你好", en: "Hi" },
+        title: { zh: "标题", en: "Title" },
+        summary: { zh: "摘要", en: "Summary" },
+        ctaPrimary: { zh: "按钮", en: "Button" },
+        ctaPrimaryUrl: "/",
+        ctaSecondary: { zh: "次要", en: "Secondary" },
+        ctaSecondaryUrl: "/other",
+      },
+      about: {
+        title: { zh: "关于", en: "About" },
+        description: { zh: "描述", en: "Description" },
+        skills: ["skill1"],
+        avatar: "/avatar.svg",
+      },
+      brand: { name: "Test Brand" },
+      footer: { github: "https://github.com/test", email: "mailto:test@test.com" },
+    };
 
     const res = await POST(makeRequest({ body: { content } }));
     const json = (await res.json()) as { ok: boolean };

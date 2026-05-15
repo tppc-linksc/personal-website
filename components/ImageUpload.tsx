@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import NextImage from "next/image";
+import { useCallback, useRef, useState } from "react";
 
 interface ImageUploadProps {
   value: string;
@@ -17,13 +18,9 @@ export function ImageUpload({
   recommendedSize = "400x400",
   className = "",
 }: ImageUploadProps) {
-  const [preview, setPreview] = useState<string>(value);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setPreview(value);
-  }, [value]);
+  const preview = value;
 
   const handleFile = useCallback(
     (file: File) => {
@@ -54,7 +51,6 @@ export function ImageUpload({
           canvas.height = h;
           canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
           const compressed = canvas.toDataURL("image/jpeg", 0.7);
-          setPreview(compressed);
           onChange(compressed);
         };
         img.src = e.target?.result as string;
@@ -101,7 +97,6 @@ export function ImageUpload({
   );
 
   const handleRemove = useCallback(() => {
-    setPreview("");
     onChange("");
     if (inputRef.current) {
       inputRef.current.value = "";
@@ -123,10 +118,13 @@ export function ImageUpload({
           }`}
         >
           {preview ? (
-            <img
+            <NextImage
               src={preview}
               alt="头像预览"
-              className="h-full w-full object-cover"
+              fill
+              sizes="128px"
+              unoptimized={preview.startsWith("data:")}
+              className="object-cover"
             />
           ) : (
             <div className="text-center">

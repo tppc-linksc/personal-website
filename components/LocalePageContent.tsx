@@ -21,6 +21,9 @@ interface LocalePageContentProps {
   showMore: boolean;
 }
 
+const ICP_BEIAN_TEXT = "浙ICP备2026032152号-1";
+const ICP_BEIAN_URL = "https://beian.miit.gov.cn/";
+
 export function LocalePageContent({
   locale,
   dict,
@@ -158,21 +161,14 @@ export function LocalePageContent({
                 minHeight: 190,
               }}
             >
-              {content.about.avatar.startsWith("data:") ? (
-                <img
-                  src={content.about.avatar}
-                  alt={locale === "zh" ? "头像" : "Portrait"}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <Image
-                  src={content.about.avatar}
-                  alt={locale === "zh" ? "头像" : "Portrait"}
-                  width={640}
-                  height={760}
-                  className="h-full w-full object-cover"
-                />
-              )}
+              <Image
+                src={content.about.avatar}
+                alt={locale === "zh" ? "头像" : "Portrait"}
+                width={640}
+                height={760}
+                unoptimized={content.about.avatar.startsWith("data:")}
+                className="h-full w-full object-cover"
+              />
             </div>
           </div>
         </article>
@@ -180,9 +176,17 @@ export function LocalePageContent({
 
       <footer
         id="contact"
-        className="glass-panel mt-4 flex items-center justify-between rounded-[24px] px-5 py-4 text-sm text-[var(--text-muted)]"
+        className="glass-panel mt-4 flex flex-col gap-2 rounded-[24px] px-5 py-4 text-sm text-[var(--text-muted)] md:flex-row md:items-center md:justify-between"
       >
         <div>© {new Date().getFullYear()} {dict.hero.name}</div>
+        <a
+          href={ICP_BEIAN_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="transition hover:text-[var(--text-main)]"
+        >
+          {ICP_BEIAN_TEXT}
+        </a>
         <div>
           <VisitCounter locale={locale} variant="inline" />
         </div>

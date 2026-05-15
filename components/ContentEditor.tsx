@@ -11,17 +11,17 @@ interface ContentEditorProps {
 }
 
 export function ContentEditor({ initialContent }: ContentEditorProps) {
+  const contentKey = JSON.stringify(initialContent);
+  return <ContentEditorForm key={contentKey} initialContent={initialContent} />;
+}
+
+function ContentEditorForm({ initialContent }: ContentEditorProps) {
   const router = useRouter();
   const [content, setContentState] = useState<SiteContent>(initialContent);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const dirtyRef = useRef(false);
-
-  useEffect(() => {
-    setContentState(initialContent);
-    dirtyRef.current = false;
-  }, [initialContent]);
 
   const syncFromServer = useCallback(async () => {
     if (dirtyRef.current) return;
@@ -36,18 +36,15 @@ export function ContentEditor({ initialContent }: ContentEditorProps) {
     }
   }, []);
 
-  const syncRef = useRef(syncFromServer);
-  syncRef.current = syncFromServer;
-
   useEffect(() => {
     function onPageShow(e: PageTransitionEvent) {
       if (e.persisted) {
-        syncRef.current();
+        void syncFromServer();
       }
     }
     function onVisibilityChange() {
       if (document.visibilityState === "visible") {
-        syncRef.current();
+        void syncFromServer();
       }
     }
     window.addEventListener("pageshow", onPageShow);
@@ -56,7 +53,7 @@ export function ContentEditor({ initialContent }: ContentEditorProps) {
       window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, []);
+  }, [syncFromServer]);
 
   function updateHero(field: keyof SiteContent["hero"], lang: "zh" | "en", value: string) {
     dirtyRef.current = true;

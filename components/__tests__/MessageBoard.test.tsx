@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MessageBoard } from "@/components/MessageBoard";
 import { resetStore, store } from "@/test/mocks/handlers";
@@ -132,7 +132,9 @@ describe("MessageBoard", () => {
       },
     ];
 
-    simulateBfcacheRestore();
+    await act(async () => {
+      simulateBfcacheRestore();
+    });
 
     await waitFor(() => {
       expect(screen.getByTestId("msg-msg-bfcache")).toBeInTheDocument();

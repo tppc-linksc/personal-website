@@ -1,36 +1,42 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-const mockReadFileSync = vi.fn();
-const mockWriteFileSync = vi.fn();
-const mockExistsSync = vi.fn();
-const mockMkdirSync = vi.fn();
-const mockRenameSync = vi.fn();
+const mockDbPrepare = vi.fn();
+const mockDbGet = vi.fn();
+const mockDbAll = vi.fn();
+const mockDbRun = vi.fn();
+const mockDbExec = vi.fn();
+const mockDbPragma = vi.fn();
+const mockDbTransaction = vi.fn();
 
-vi.mock("fs", () => ({
+const mockStatement = {
+  get: (...args: unknown[]) => mockDbGet(...args),
+  all: (...args: unknown[]) => mockDbAll(...args),
+  run: (...args: unknown[]) => mockDbRun(...args),
+};
+
+mockDbPrepare.mockReturnValue(mockStatement);
+mockDbTransaction.mockImplementation((fn: () => void) => fn());
+
+vi.mock("@/lib/db", () => ({
   default: {
-    readFileSync: (...args: unknown[]) => mockReadFileSync(...args),
-    writeFileSync: (...args: unknown[]) => mockWriteFileSync(...args),
-    existsSync: (...args: unknown[]) => mockExistsSync(...args),
-    mkdirSync: (...args: unknown[]) => mockMkdirSync(...args),
-    renameSync: (...args: unknown[]) => mockRenameSync(...args),
+    prepare: (...args: unknown[]) => mockDbPrepare(...args),
+    exec: (...args: unknown[]) => mockDbExec(...args),
+    pragma: (...args: unknown[]) => mockDbPragma(...args),
+    transaction: (...args: unknown[]) => mockDbTransaction(...args),
   },
-  readFileSync: (...args: unknown[]) => mockReadFileSync(...args),
-  writeFileSync: (...args: unknown[]) => mockWriteFileSync(...args),
-  existsSync: (...args: unknown[]) => mockExistsSync(...args),
-  mkdirSync: (...args: unknown[]) => mockMkdirSync(...args),
-  renameSync: (...args: unknown[]) => mockRenameSync(...args),
 }));
 
 import { GET, POST } from "@/app/api/metrics/visits/route";
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockExistsSync.mockReturnValue(true);
-  mockReadFileSync.mockReturnValue(JSON.stringify({ visits: 42 }));
+  mockDbPrepare.mockReturnValue(mockStatement);
 });
 
 describe("GET /api/metrics/visits", () => {
   it("returns visit count with no-store cache header", async () => {
+    mockDbGet.mockReturnValue({ value: 42 });
+
     const res = await GET();
     const json = (await res.json()) as { visits: number; enabled: boolean };
 
@@ -40,17 +46,8 @@ describe("GET /api/metrics/visits", () => {
     expect(res.headers.get("Cache-Control")).toBe("no-store");
   });
 
-  it("returns 0 when data file does not exist", async () => {
-    mockExistsSync.mockReturnValue(false);
-
-    const res = await GET();
-    const json = (await res.json()) as { visits: number };
-
-    expect(json.visits).toBe(0);
-  });
-
-  it("returns 0 when data file is corrupt", async () => {
-    mockReadFileSync.mockReturnValue("not-json{");
+  it("returns 0 when no data in database", async () => {
+    mockDbGet.mockReturnValue(undefined);
 
     const res = await GET();
     const json = (await res.json()) as { visits: number };
@@ -61,32 +58,21 @@ describe("GET /api/metrics/visits", () => {
 
 describe("POST /api/metrics/visits", () => {
   it("increments visit count", async () => {
+    mockDbGet.mockReturnValue({ value: 43 });
+
     const res = await POST();
     const json = (await res.json()) as { visits: number };
 
     expect(res.status).toBe(200);
     expect(json.visits).toBe(43);
-    expect(mockWriteFileSync).toHaveBeenCalled();
-    expect(mockRenameSync).toHaveBeenCalled();
   });
 
-  it("starts from 0 when no data file", async () => {
-    mockExistsSync.mockReturnValue(false);
+  it("returns 0 when upsert returns no row", async () => {
+    mockDbGet.mockReturnValue(undefined);
 
     const res = await POST();
     const json = (await res.json()) as { visits: number };
 
-    expect(json.visits).toBe(1);
-  });
-
-  it("creates data directory if missing", async () => {
-    mockExistsSync.mockReturnValueOnce(false); // data dir check
-    mockExistsSync.mockReturnValueOnce(false); // data file check
-
-    const res = await POST();
-    const json = (await res.json()) as { visits: number };
-
-    expect(json.visits).toBe(1);
-    expect(mockMkdirSync).toHaveBeenCalled();
+    expect(json.visits).toBe(0);
   });
 });

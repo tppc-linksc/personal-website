@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { moderateMessage } from "@/lib/messages-source";
 import { isStudioAuthorized, STUDIO_SESSION_COOKIE } from "@/lib/studio-auth";
 
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const authorized = await isStudioAuthorized({
     tokenHeader: request.headers.get("x-studio-token"),

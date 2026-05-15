@@ -7,7 +7,7 @@
 - **框架**: Next.js 16 (App Router)
 - **语言**: TypeScript
 - **样式**: Tailwind CSS
-- **存储**: 本地 JSON 文件
+- **存储**: 本地 SQLite（better-sqlite3）
 - **部署**: Vercel / 自托管
 
 ## 功能特点
@@ -23,10 +23,7 @@
 - 骨架屏加载动画
 
 ### 后台管理 (Studio CMS)
-- 项目管理（创建、编辑、删除）
-- 三阶段编辑流程：基础信息 → 内容信息 → 发布信息
-- 封面图片上传
-- 草稿/发布状态管理
+- 项目浏览（当前为只读静态模式，项目数据由 `lib/projects.ts` 维护）
 - 安全的登录认证
 
 ### 内容管理 (/content)
@@ -38,11 +35,12 @@
 
 ### API 接口
 - `GET /api/projects` - 获取项目列表
-- `POST /api/projects` - 创建/更新/删除项目
+- `POST /api/projects` - 项目数据维护提示（只读模式）
 - `GET /api/studio/session` - 检查登录状态
 - `POST /api/studio/session` - 管理员登录
 - `DELETE /api/studio/session` - 退出登录
 - `POST /api/studio/upload` - 上传封面图片
+- `GET /api/uploads/[filename]` - 获取上传文件
 - `GET /api/projects/[slug]/messages` - 获取留言
 - `POST /api/projects/[slug]/messages` - 提交留言
 - `GET /api/metrics/visits` - 获取访问量
@@ -117,9 +115,10 @@ personal-website/
 │   │           └── page.tsx      # 项目详情页
 │   ├── api/                      # API 路由
 │   │   ├── projects/             # 项目 API
-│   │   ├── studio/               # Studio API
-│   │   ├── messages/             # 留言 API
-│   │   └── metrics/              # 统计 API
+│   │   ├── studio/               # Studio API（含上传）
+│   │   ├── messages/             # 留言管理 API
+│   │   ├── metrics/              # 统计 API
+│   │   └── uploads/              # 上传文件服务
 │   ├── studio/                   # Studio CMS
 │   │   ├── page.tsx              # CMS 主页
 │   │   └── login/                # 登录页
@@ -146,21 +145,26 @@ personal-website/
 │   ├── LanguageSwitch.tsx        # 语言切换
 │   └── VisitCounter.tsx          # 访问量统计
 ├── lib/                          # 工具库
+│   ├── db.ts                     # SQLite 数据库单例（WAL 模式）
 │   ├── projects.ts               # 项目数据模型
 │   ├── projects-source.ts        # 项目数据源
 │   ├── messages.ts               # 留言数据模型
-│   ├── messages-source.ts        # 留言数据源
+│   ├── messages-source.ts        # 留言数据源（SQLite）
 │   ├── i18n.ts                   # 国际化配置
-│   ├── site-content.ts           # 网站内容配置（版本化 localStorage）
+│   ├── site-content.ts           # 网站内容配置（SQLite 存储）
 │   ├── project-selection.ts      # 项目筛选排序
 │   ├── studio-auth.ts            # Studio 认证（HMAC 会话）
-│   └── rate-limit.ts             # 文件级限流
+│   └── rate-limit.ts             # 限流（SQLite 滑动窗口）
 ├── public/                       # 静态资源
 │   ├── hero/                     # Hero 图片
 │   ├── projects/                 # 项目封面
 │   └── avatar-placeholder.svg    # 头像占位图
+├── data/                         # 运行时数据（SQLite）
+│   ├── portfolio.sqlite          # 主数据库
+│   └── uploads/                  # 上传文件目录
 ├── scripts/                      # 脚本工具
-│   └── studio-token-hash.mjs     # Token 哈希生成
+│   ├── studio-token-hash.mjs     # Token 哈希生成
+│   └── migrate-json-to-sqlite.mjs # JSON → SQLite 数据迁移
 ├── package.json                  # 项目配置
 ├── tsconfig.json                 # TypeScript 配置
 ├── next.config.ts                # Next.js 配置
@@ -189,21 +193,20 @@ personal-website/
 
 ### 3. 项目数据源
 
-项目数据存储在本地 TypeScript 文件中（`lib/projects.ts`），无需外部数据库。留言和访问统计存储为 JSON 文件（`data/` 目录）。所有 JSON 文件写入均使用原子写入模式（先写临时文件再 rename），防止写入中断导致数据损坏。
+项目数据存储在本地 TypeScript 文件中（`lib/projects.ts`），无需外部数据库。留言、访问统计、网站内容和限流记录等运行时数据存储在 SQLite 数据库中（默认 `data/portfolio.sqlite`，生产建议 `PORTFOLIO_DATA_DIR=/var/lib/personal-website`），使用 WAL 模式支持并发读写。
 
 ### 3.5 安全机制
 
 - **会话认证**: 基于 HMAC-SHA256 的会话 token，支持明文和哈希两种管理员 Token 存储方式
-- **接口限流**: 基于文件持久化的滑动窗口限流，登录接口 5 次/分钟，留言接口 8 次/分钟
-- **上传校验**: 仅允许图片类型，限制 5MB 大小，文件名长度 100 字符
+- **接口限流**: 基于 SQLite 数据库的滑动窗口限流，支持分桶（login/guest-message/default），登录接口 5 次/分钟，留言接口 8 次/分钟
+- **上传校验**: 仅允许 `jpg/jpeg/png/webp/gif`，限制 5MB 大小，按文件签名校验真实图片格式
 - **安全响应头**: X-Content-Type-Options、X-Frame-Options、Referrer-Policy、Permissions-Policy
 
 ### 4. Studio CMS
 
-后台管理系统，功能包括：
-- 项目 CRUD 操作
-- 封面图片上传
-- 草稿/发布状态管理
+后台管理系统（当前为只读模式，项目数据由 `lib/projects.ts` 维护）：
+- 项目浏览与查看
+- 草稿/发布状态筛选
 - 安全的会话认证
 
 #### 编辑流程
@@ -223,7 +226,7 @@ personal-website/
 - Hero 区域：问候语、标题、描述、按钮文字和链接（支持中英文双语）
 - 关于我：描述文字、技能标签、头像上传
 - 品牌名称和底部联系方式
-- 内容存储在浏览器 localStorage（带 `__version` 版本号，支持未来数据迁移），保存后页面实时更新
+- 内容存储在 SQLite 数据库中，保存后页面实时更新
 
 ### 6. 留言系统
 
@@ -232,7 +235,7 @@ personal-website/
 - 管理员回复
 - 留言审核
 - 嵌套回复
-- 数据存储：`data/messages.json`
+- 数据存储：SQLite 数据库（`data/portfolio.sqlite`）
 
 ### 7. 骨架屏加载
 
@@ -300,24 +303,25 @@ npm run test:e2e:ui
 | `STUDIO_ADMIN_TOKEN_HASH` | 否 | 管理员哈希 Token | - |
 | `STUDIO_SESSION_SECRET` | 否 | 会话签名密钥 | 使用 ADMIN_TOKEN |
 | `STUDIO_SESSION_TTL_SECONDS` | 否 | 会话有效期（秒） | 259200 |
+| `PORTFOLIO_DATA_DIR` | 否 | 运行时数据目录（SQLite + 上传文件） | `data/` |
 | `GITHUB_TOKEN` | 否 | GitHub API Token（获取 star 数） | - |
 | `GITHUB_STARS_CACHE_TTL_MS` | 否 | Stars 缓存有效期（毫秒） | 1800000 |
 | `GITHUB_STARS_TIMEOUT_MS` | 否 | GitHub API 超时（毫秒） | 2500 |
 
 ## 数据存储
 
-项目采用纯本地存储，不依赖任何外部数据库：
+项目采用本地 SQLite + TypeScript 文件存储，不依赖任何外部数据库：
 
-| 数据类型 | 存储方式 | 文件位置 |
+| 数据类型 | 存储方式 | 存储位置 |
 |---------|---------|---------|
 | 项目数据 | TypeScript 文件 | `lib/projects.ts` |
-| 网站内容 | localStorage（版本化） | 浏览器本地 |
-| 留言数据 | JSON 文件（原子写入） | `data/messages.json` |
-| 访问统计 | JSON 文件（原子写入） | `data/visits.json` |
-| 限流记录 | JSON 文件 | `data/rate-limits.json` |
-| 上传图片 | 文件系统 | `public/uploads/` |
+| 网站内容 | SQLite（服务端读写，通过 API 同步） | `PORTFOLIO_DATA_DIR/portfolio.sqlite`（默认 `data/portfolio.sqlite`） |
+| 留言数据 | SQLite | `PORTFOLIO_DATA_DIR/portfolio.sqlite`（默认 `data/portfolio.sqlite`） |
+| 访问统计 | SQLite | `PORTFOLIO_DATA_DIR/portfolio.sqlite`（默认 `data/portfolio.sqlite`） |
+| 限流记录 | SQLite（自动过期清理） | `PORTFOLIO_DATA_DIR/portfolio.sqlite`（默认 `data/portfolio.sqlite`） |
+| 上传图片 | 文件系统（UUID 命名） | `PORTFOLIO_DATA_DIR/uploads/` |
 
-数据可随时备份，只需复制 `lib/projects.ts` 和 `data/` 目录即可。`data/rate-limits.json` 为运行时限流数据，无需备份。
+数据可随时备份：代码内静态数据请通过 Git 管理（重点是 `lib/projects.ts`）；运行时数据请备份 `PORTFOLIO_DATA_DIR`（默认 `data/`，生产通常为 `/var/lib/personal-website`）。数据库文件使用 WAL 模式，备份时推荐使用 `sqlite3` 的 `.backup` 命令确保一致性。
 
 ## 路线图
 
