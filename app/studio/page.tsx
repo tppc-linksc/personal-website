@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProjectItem } from "@/lib/projects";
 import { ProjectList } from "@/components/studio/ProjectList";
 import { BasicTab } from "@/components/studio/BasicTab";
@@ -19,6 +19,7 @@ const emptyProject: ProjectItem = {
   design: { zh: "", en: "" },
   architecture: { zh: "", en: "" },
   cover: "/projects/your-cover.svg",
+  startDate: "",
   eta: "",
   progress: 0,
   tech: [],
@@ -45,7 +46,7 @@ function cloneProject(project: ProjectItem): ProjectItem {
 
 type StudioTab = "basic" | "content" | "publish";
 type VisibilityFilter = "all" | "draft" | "published";
-const STATIC_PROJECT_MODE = true;
+type MessageType = "success" | "error";
 
 export default function StudioPage() {
   const [studioAuthorized, setStudioAuthorized] = useState(false);
@@ -55,20 +56,41 @@ export default function StudioPage() {
   const [techInput, setTechInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<MessageType>("success");
   const [tab, setTab] = useState<StudioTab>("basic");
   const [filter, setFilter] = useState<VisibilityFilter>("all");
+  const messageTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // when selectedSlug changes, sync draft from projects list
+  useEffect(() => {
+    if (!selectedSlug) {
+      setDraft(cloneProject(emptyProject));
+      setTechInput("");
+      return;
+    }
+    const found = projects.find((p) => p.slug === selectedSlug);
+    if (found) {
+      const copy = cloneProject(found);
+      setDraft(copy);
+      setTechInput(copy.tech.join(", "));
+    }
+  }, [selectedSlug, projects]);
+
+  function showMessage(text: string, type: MessageType = "success", duration = 4000) {
+    if (messageTimer.current) clearTimeout(messageTimer.current);
+    setMessage(text);
+    setMessageType(type);
+    messageTimer.current = setTimeout(() => {
+      setMessage(null);
+      messageTimer.current = null;
+    }, duration);
+  }
 
   function selectProject(project: ProjectItem) {
     setSelectedSlug(project.slug);
-    const copy = cloneProject(project);
-    setDraft(copy);
-    setTechInput(copy.tech.join(", "));
   }
 
   const loadProjects = useCallback(async () => {
-    setLoading(true);
-    setMessage("");
     try {
       const res = await fetch("/api/projects?scope=all", { cache: "no-store" });
       const json = (await res.json()) as {
@@ -83,74 +105,81 @@ export default function StudioPage() {
       const list = json.projects ?? [];
       setStudioAuthorized(Boolean(json.studioAuthorized));
       setProjects(list);
-
-      if (list.length > 0) {
-        setSelectedSlug((prev) => {
-          const keep = prev ? list.find((item) => item.slug === prev) : undefined;
-          const target = keep ?? list[0];
-          const copy = cloneProject(target);
-          setDraft(copy);
-          setTechInput(copy.tech.join(", "));
-          return target.slug;
-        });
-      }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "加载失败");
-    } finally {
-      setLoading(false);
+      showMessage(error instanceof Error ? error.message : "加载失败", "error");
     }
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadProjects();
-    }, 0);
-
-    function onPageShow(e: PageTransitionEvent) {
-      if (e.persisted) {
-        void loadProjects();
-      }
-    }
-    window.addEventListener("pageshow", onPageShow);
-
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener("pageshow", onPageShow);
-    };
+    void loadProjects();
   }, [loadProjects]);
 
-  async function postAction(payload: Record<string, unknown>) {
+  useEffect(() => {
+    return () => {
+      if (messageTimer.current) clearTimeout(messageTimer.current);
+    };
+  }, []);
+
+  async function postAction(payload: Record<string, unknown>, reloadAfter?: boolean) {
     setLoading(true);
-    setMessage("");
 
     try {
       const res = await fetch("/api/projects", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const json = (await res.json()) as { ok?: boolean; message?: string; error?: string };
       if (!res.ok) {
         throw new Error(json.error ?? "操作失败");
       }
-      setMessage(json.message ?? "操作成功");
+      showMessage(json.message ?? "操作成功", "success");
+
+      if (reloadAfter) {
+        await loadProjects();
+      }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "操作失败");
+      showMessage(error instanceof Error ? error.message : "操作失败", "error");
     } finally {
       setLoading(false);
     }
   }
 
-  async function uploadCover(file: File) {
-    if (STATIC_PROJECT_MODE) {
-      setMessage("静态模式下已禁用上传，请在 lib/projects.ts 中手动填写封面路径");
-      return;
-    }
+  function handleSaveDraft() {
+    void postAction(
+      { action: "upsert", project: { ...draft, visibility: "draft" } },
+      true
+    );
+  }
 
+  function handlePublish() {
+    void postAction(
+      { action: "upsert", project: { ...draft, visibility: "published" } },
+      true
+    );
+  }
+
+  function handleDelete() {
+    const slug = draft.slug;
+    if (!slug) return;
+    void postAction(
+      { action: "delete", slug },
+      true
+    );
+    setSelectedSlug("");
+  }
+
+  function handleSeed() {
+    void postAction({ action: "seed" }, true);
+  }
+
+  function handleNewProject() {
+    setSelectedSlug("");
+    setTab("basic");
+  }
+
+  async function uploadCover(file: File) {
     setUploading(true);
-    setMessage("");
 
     try {
       const formData = new FormData();
@@ -169,10 +198,11 @@ export default function StudioPage() {
         throw new Error("上传返回数据异常");
       }
 
-      applyField("cover", json.cover);
-      setMessage("封面上传成功，已写入 cover 字段");
+      const uploadedCover: string = json.cover;
+      setDraft((prev) => ({ ...prev, cover: uploadedCover }));
+      showMessage("封面上传成功，已写入 cover 字段", "success");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "上传失败");
+      showMessage(error instanceof Error ? error.message : "上传失败", "error");
     } finally {
       setUploading(false);
     }
@@ -193,16 +223,31 @@ export default function StudioPage() {
   return (
     <main className="min-h-screen px-4 py-6 md:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
+        {message && (
+          <div
+            className={`pointer-events-auto fixed left-1/2 top-4 z-50 -translate-x-1/2 animate-in fade-in slide-in-from-top-2 rounded-xl border px-5 py-3 text-sm shadow-lg backdrop-blur-md ${
+              messageType === "success"
+                ? "border-[var(--success-border)] bg-[var(--success-soft)] text-[var(--success-text)]"
+                : "border-[var(--danger-border)] bg-[var(--danger-soft)] text-[var(--danger-text)]"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span>{messageType === "success" ? "✓" : "✕"}</span>
+              <span>{message}</span>
+            </div>
+          </div>
+        )}
+
         <header className="surface-panel rounded-2xl p-4 md:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-semibold">Studio · 项目管理</h1>
-              <p className="mt-2 text-sm text-[var(--text-muted)]">项目数据当前为只读静态模式，请直接修改 lib/projects.ts 后重新部署。</p>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">项目数据已持久化到 SQLite，支持在 Studio 中直接创建、编辑和发布。</p>
             </div>
             <button
               type="button"
               onClick={() => void logout()}
-              className="rounded-xl border border-[var(--line)] bg-[var(--button-bg)] px-4 py-2 text-sm transition hover:border-[var(--accent)]"
+              className="rounded-xl border shadow-sm border-[var(--line-muted)] bg-[var(--button-bg)] px-4 py-2 text-sm transition hover:border-[var(--accent)]"
             >
               退出登录
             </button>
@@ -211,41 +256,67 @@ export default function StudioPage() {
           <div className="mt-4 flex flex-wrap gap-3">
             <button
               type="button"
-              disabled
-              onClick={() => void postAction({ action: "seed" })}
-              className="rounded-xl border border-[var(--line)] bg-[var(--panel-soft)] px-4 py-2 text-sm opacity-50"
+              disabled={loading}
+              onClick={() => void handleSeed()}
+              className="rounded-xl border shadow-sm border-[var(--line-muted)] bg-[var(--button-bg)] px-4 py-2 text-sm transition hover:border-[var(--accent)] disabled:opacity-50"
             >
-              示例数据由代码维护
+              从静态数据导入
             </button>
             <button
               type="button"
-              disabled
-              onClick={() => {
-                setSelectedSlug("");
-                setDraft(cloneProject(emptyProject));
-                setTechInput("");
-                setTab("basic");
-              }}
-              className="rounded-xl border border-[var(--line)] bg-[var(--panel-soft)] px-4 py-2 text-sm opacity-50"
+              disabled={loading}
+              onClick={handleNewProject}
+              className="rounded-xl border shadow-sm border-[var(--line-muted)] bg-[var(--button-bg)] px-4 py-2 text-sm transition hover:border-[var(--accent)] disabled:opacity-50"
             >
-              新建项目需改代码
+              新建项目
             </button>
           </div>
 
           <div className="mt-3 flex flex-wrap gap-3 text-xs text-[var(--text-soft)]">
             <div>Studio 会话：{studioAuthorized ? "已授权" : "未授权"}</div>
           </div>
-          {message && <div className="mt-2 text-sm text-[var(--accent-text)]">{message}</div>}
+
         </header>
 
         <div className="grid gap-6 md:grid-cols-[320px,1fr]">
-          <ProjectList
-            projects={projects}
-            selectedSlug={selectedSlug}
-            filter={filter}
-            onFilterChange={setFilter}
-            onSelect={selectProject}
-          />
+          <div className="flex flex-col gap-4">
+            <ProjectList
+              projects={projects}
+              selectedSlug={selectedSlug}
+              filter={filter}
+              onFilterChange={setFilter}
+              onSelect={selectProject}
+            />
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled={loading || uploading}
+                onClick={handleSaveDraft}
+                className="rounded-xl border border-[var(--warning-border)] bg-[var(--warning-soft)] px-4 py-2 text-sm text-[var(--warning-text)] transition disabled:opacity-50"
+              >
+                {loading ? "保存中..." : "保存草稿"}
+              </button>
+              <button
+                type="button"
+                disabled={loading || uploading}
+                onClick={handlePublish}
+                className="rounded-xl border border-[var(--accent-border)] bg-[var(--accent-soft)] px-4 py-2 text-sm text-[var(--accent-text)] transition disabled:opacity-50"
+              >
+                {loading ? "发布中..." : "发布项目"}
+              </button>
+              {selectedSlug && (
+                <button
+                  type="button"
+                  disabled={loading || uploading}
+                  onClick={handleDelete}
+                  className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-2 text-sm text-[var(--danger-text)] transition disabled:opacity-50"
+                >
+                  {loading ? "删除中..." : "删除项目"}
+                </button>
+              )}
+            </div>
+          </div>
 
           <section className="surface-panel rounded-2xl p-4 md:p-5">
             <div className="mb-5 flex flex-wrap gap-2">
@@ -261,7 +332,7 @@ export default function StudioPage() {
                   className={`rounded-full border px-3 py-1.5 text-xs transition ${
                     tab === item.key
                       ? "border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--accent-text)]"
-                      : "border-[var(--line)] bg-[var(--panel-soft)] text-[var(--text-muted)]"
+                      : "shadow-sm border-[var(--line-muted)] bg-[var(--button-bg)] text-[var(--text-muted)]"
                   }`}
                 >
                   {item.label}
@@ -283,14 +354,9 @@ export default function StudioPage() {
             {tab === "publish" && (
               <PublishTab
                 draft={draft}
-                staticProjectMode={STATIC_PROJECT_MODE}
                 uploading={uploading}
-                loading={loading}
                 onFieldChange={applyField}
                 onUpload={(file) => void uploadCover(file)}
-                onSaveDraft={() => void postAction({ action: "upsert", project: { ...draft, visibility: "draft" } })}
-                onPublish={() => void postAction({ action: "upsert", project: { ...draft, visibility: "published" } })}
-                onDelete={() => void postAction({ action: "delete", slug: draft.slug })}
               />
             )}
           </section>

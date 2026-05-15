@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllProjects } from "@/lib/projects-source";
+import { upsertProject, deleteProject, seedProjects } from "@/lib/projects-store";
 import { isStudioAuthorized, STUDIO_SESSION_COOKIE } from "@/lib/studio-auth";
+import type { ProjectItem } from "@/lib/projects";
 
 function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -34,5 +36,40 @@ export async function POST(request: NextRequest) {
     return unauthorized();
   }
 
-  return NextResponse.json({ ok: true, message: "当前为纯静态模式，项目数据请直接修改 lib/projects.ts" }, { status: 200 });
+  try {
+    const body = (await request.json()) as {
+      action: "upsert" | "delete" | "seed";
+      project?: ProjectItem;
+      slug?: string;
+    };
+
+    switch (body.action) {
+      case "upsert": {
+        if (!body.project?.slug) {
+          return NextResponse.json({ error: "项目 slug 不能为空" }, { status: 400 });
+        }
+        upsertProject(body.project);
+        return NextResponse.json({ ok: true, message: "项目已保存" });
+      }
+
+      case "delete": {
+        if (!body.slug) {
+          return NextResponse.json({ error: "项目 slug 不能为空" }, { status: 400 });
+        }
+        deleteProject(body.slug);
+        return NextResponse.json({ ok: true, message: "项目已删除" });
+      }
+
+      case "seed": {
+        const count = seedProjects();
+        return NextResponse.json({ ok: true, message: `已从静态数据导入 ${count} 个项目` });
+      }
+
+      default:
+        return NextResponse.json({ error: `未知操作: ${body.action}` }, { status: 400 });
+    }
+  } catch (error) {
+    console.error("POST /api/projects failed", error);
+    return NextResponse.json({ error: "操作失败" }, { status: 500 });
+  }
 }

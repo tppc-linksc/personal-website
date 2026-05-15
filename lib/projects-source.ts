@@ -1,4 +1,5 @@
-import { cloneLocalProjects, type ProjectItem } from "@/lib/projects";
+import { getAllProjects as getFromStore, getProjectBySlug as getFromStoreBySlug } from "@/lib/projects-store";
+import type { ProjectItem } from "@/lib/projects";
 
 function isVisible(project: ProjectItem): boolean {
   return (project.visibility ?? "published") === "published";
@@ -6,15 +7,14 @@ function isVisible(project: ProjectItem): boolean {
 
 export function getAllProjects(options?: { includeDraft?: boolean }): ProjectItem[] {
   const includeDraft = Boolean(options?.includeDraft);
-  const local = cloneLocalProjects();
-  return includeDraft ? local : local.filter(isVisible);
+  const projects = getFromStore();
+  return includeDraft ? projects : projects.filter(isVisible);
 }
 
 export function getProjectBySlug(slug: string, options?: { includeDraft?: boolean }): ProjectItem | undefined {
   const includeDraft = Boolean(options?.includeDraft);
-  const local = cloneLocalProjects();
-  const found = local.find((item) => item.slug === slug);
-  if (!found) return undefined;
-  if (!includeDraft && !isVisible(found)) return undefined;
-  return found;
+  const project = getFromStoreBySlug(slug);
+  if (!project) return undefined;
+  if (!includeDraft && !isVisible(project)) return undefined;
+  return project;
 }

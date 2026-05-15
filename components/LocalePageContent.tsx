@@ -16,7 +16,7 @@ interface LocalePageContentProps {
   locale: Locale;
   dict: Dictionary;
   content: SiteContent;
-  projects: ProjectItem[];
+  roadmapProjects: ProjectItem[];
   featuredProjects: ProjectItem[];
   showMore: boolean;
 }
@@ -28,7 +28,7 @@ export function LocalePageContent({
   locale,
   dict,
   content,
-  projects,
+  roadmapProjects,
   featuredProjects,
   showMore,
 }: LocalePageContentProps) {
@@ -98,7 +98,7 @@ export function LocalePageContent({
         <article id="route" className="glass-panel rounded-[24px] px-4 py-3 md:px-5 flex flex-col">
           <p className="text-sm font-medium text-[var(--text-muted)]">{locale === "zh" ? "项目路线" : "Project Roadmap"}</p>
           <div className="mt-2 flex-1 overflow-y-auto pr-1">
-            {projects.map((project) => (
+            {roadmapProjects.map((project) => (
               <a
                 key={project.slug}
                 href={project.github || `/${locale}/projects/${project.slug}`}

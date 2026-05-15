@@ -4,9 +4,18 @@ import type { ProjectItem } from "@/lib/projects";
 
 const mockGetAllProjects = vi.fn();
 const mockIsStudioAuthorized = vi.fn();
+const mockUpsertProject = vi.fn();
+const mockDeleteProject = vi.fn();
+const mockSeedProjects = vi.fn();
 
 vi.mock("@/lib/projects-source", () => ({
   getAllProjects: (...args: unknown[]) => mockGetAllProjects(...args),
+}));
+
+vi.mock("@/lib/projects-store", () => ({
+  upsertProject: (...args: unknown[]) => mockUpsertProject(...args),
+  deleteProject: (...args: unknown[]) => mockDeleteProject(...args),
+  seedProjects: (...args: unknown[]) => mockSeedProjects(...args),
 }));
 
 vi.mock("@/lib/studio-auth", () => ({
@@ -17,10 +26,16 @@ vi.mock("@/lib/studio-auth", () => ({
 import { GET, POST } from "@/app/api/projects/route";
 
 function makeRequest(url: string, init?: {
+  method?: string;
   headers?: Record<string, string>;
   cookies?: Record<string, string>;
+  body?: string;
 }): NextRequest {
-  const req = new NextRequest(url, { headers: init?.headers });
+  const req = new NextRequest(url, {
+    method: init?.method ?? "GET",
+    headers: init?.headers,
+    body: init?.body,
+  });
 
   if (init?.cookies) {
     for (const [name, value] of Object.entries(init.cookies)) {
@@ -119,14 +134,105 @@ describe("POST /api/projects", () => {
     expect(json.error).toBe("Unauthorized");
   });
 
-  it("returns 200 with static mode message when authorized", async () => {
+  it("upserts a project", async () => {
     mockIsStudioAuthorized.mockResolvedValue(true);
+    const project = makeProject({ slug: "my-project" });
 
-    const res = await POST(makeRequest("http://localhost/api/projects"));
+    const res = await POST(makeRequest("http://localhost/api/projects", {
+      method: "POST",
+      body: JSON.stringify({ action: "upsert", project }),
+    }));
     const json = (await res.json()) as { ok: boolean; message: string };
 
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);
-    expect(json.message).toContain("静态模式");
+    expect(mockUpsertProject).toHaveBeenCalledWith(project);
+  });
+
+  it("rejects upsert without slug", async () => {
+    mockIsStudioAuthorized.mockResolvedValue(true);
+
+    const res = await POST(makeRequest("http://localhost/api/projects", {
+      method: "POST",
+      body: JSON.stringify({ action: "upsert", project: { title: { zh: "no slug" } } }),
+    }));
+    const json = (await res.json()) as { error: string };
+
+    expect(res.status).toBe(400);
+    expect(json.error).toContain("slug");
+    expect(mockUpsertProject).not.toHaveBeenCalled();
+  });
+
+  it("deletes a project", async () => {
+    mockIsStudioAuthorized.mockResolvedValue(true);
+
+    const res = await POST(makeRequest("http://localhost/api/projects", {
+      method: "POST",
+      body: JSON.stringify({ action: "delete", slug: "my-project" }),
+    }));
+    const json = (await res.json()) as { ok: boolean; message: string };
+
+    expect(res.status).toBe(200);
+    expect(json.ok).toBe(true);
+    expect(mockDeleteProject).toHaveBeenCalledWith("my-project");
+  });
+
+  it("rejects delete without slug", async () => {
+    mockIsStudioAuthorized.mockResolvedValue(true);
+
+    const res = await POST(makeRequest("http://localhost/api/projects", {
+      method: "POST",
+      body: JSON.stringify({ action: "delete" }),
+    }));
+    const json = (await res.json()) as { error: string };
+
+    expect(res.status).toBe(400);
+    expect(json.error).toContain("slug");
+    expect(mockDeleteProject).not.toHaveBeenCalled();
+  });
+
+  it("seeds from static data", async () => {
+    mockIsStudioAuthorized.mockResolvedValue(true);
+    mockSeedProjects.mockReturnValue(5);
+
+    const res = await POST(makeRequest("http://localhost/api/projects", {
+      method: "POST",
+      body: JSON.stringify({ action: "seed" }),
+    }));
+    const json = (await res.json()) as { ok: boolean; message: string };
+
+    expect(res.status).toBe(200);
+    expect(json.ok).toBe(true);
+    expect(json.message).toContain("5");
+    expect(mockSeedProjects).toHaveBeenCalledOnce();
+  });
+
+  it("returns 400 for unknown action", async () => {
+    mockIsStudioAuthorized.mockResolvedValue(true);
+
+    const res = await POST(makeRequest("http://localhost/api/projects", {
+      method: "POST",
+      body: JSON.stringify({ action: "unknown" }),
+    }));
+    const json = (await res.json()) as { error: string };
+
+    expect(res.status).toBe(400);
+    expect(json.error).toContain("未知操作");
+  });
+
+  it("returns 500 on error", async () => {
+    mockIsStudioAuthorized.mockResolvedValue(true);
+    mockUpsertProject.mockImplementation(() => {
+      throw new Error("DB error");
+    });
+
+    const res = await POST(makeRequest("http://localhost/api/projects", {
+      method: "POST",
+      body: JSON.stringify({ action: "upsert", project: makeProject() }),
+    }));
+    const json = (await res.json()) as { error: string };
+
+    expect(res.status).toBe(500);
+    expect(json.error).toBe("操作失败");
   });
 });

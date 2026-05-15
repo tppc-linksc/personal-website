@@ -22,6 +22,7 @@ export interface ProjectItem {
   design: LocalizedText;
   architecture: LocalizedText;
   cover: string;
+  startDate?: string;
   eta?: string;
   progress?: number;
   tech: string[];
@@ -61,6 +62,7 @@ export const localProjects: ProjectItem[] = [
     },
     cover: "/projects/vibe-workspace.svg",
     tech: ["React", "TypeScript", "CodeMirror", "Vite"],
+    startDate: "2025-09-01",
     github: "https://github.com/tppc_linksc/vite-workspace",
     live: "https://vite-workspace.vercel.app",
     updatedAt: Date.now(),
@@ -93,6 +95,7 @@ export const localProjects: ProjectItem[] = [
     },
     cover: "/projects/prompt-lab.svg",
     tech: ["Next.js", "TypeScript", "Tailwind", "Zustand"],
+    startDate: "2025-03-01",
     github: "https://github.com/tppc_linksc/t2i-prompt-lab",
     live: "https://prompt-lab.vercel.app",
     videoUrl: "https://www.bilibili.com/",
@@ -126,6 +129,7 @@ export const localProjects: ProjectItem[] = [
     },
     cover: "/projects/devlog-chronicle.svg",
     tech: ["Next.js", "Drizzle", "SQLite", "MDX"],
+    startDate: "2025-11-01",
     github: "https://github.com/tppc_linksc/devlog-chronicle",
     progress: 62,
     updatedAt: Date.now(),
@@ -157,6 +161,7 @@ export const localProjects: ProjectItem[] = [
     },
     cover: "/projects/api-sandbox-2.svg",
     tech: ["React", "Monaco", "Node", "Postgres"],
+    startDate: "2026-06-01",
     github: "https://github.com/tppc_linksc/api-sandbox",
     eta: "2026 Q3",
     progress: 18,
@@ -189,6 +194,7 @@ export const localProjects: ProjectItem[] = [
     },
     cover: "/projects/signal-grid.svg",
     tech: ["Next.js", "OpenAI API", "Vector DB", "Queue"],
+    startDate: "2026-01-01",
     github: "https://github.com/tppc_linksc",
     eta: "2026 Q2",
     progress: 34,

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { LocalePageContent } from "@/components/LocalePageContent";
 import { getDictionary, isLocale, type Locale } from "@/lib/i18n";
-import { selectFeaturedProjects, sortProjects } from "@/lib/project-selection";
+import { selectFeaturedProjects, sortProjects, sortProjectsByStartDate } from "@/lib/project-selection";
 import { getAllProjects } from "@/lib/projects-source";
 import { getContent } from "@/lib/site-content";
 
@@ -32,6 +32,7 @@ export default async function LocalePage({ params }: LocalePageProps) {
   const dict = getDictionary(typedLocale);
   const projects = await getAllProjects();
   const sortedProjects = sortProjects(projects);
+  const roadmapProjects = sortProjectsByStartDate(projects);
   const featuredProjects = selectFeaturedProjects(sortedProjects, 3);
   const showMore = projects.length > 3;
   const content = getContent();
@@ -43,7 +44,7 @@ export default async function LocalePage({ params }: LocalePageProps) {
           locale={typedLocale}
           dict={dict}
           content={content}
-          projects={sortedProjects}
+          roadmapProjects={roadmapProjects}
           featuredProjects={featuredProjects}
           showMore={showMore}
         />

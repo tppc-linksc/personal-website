@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { getDictionary, isLocale, type Locale } from "@/lib/i18n";
 import { t } from "@/lib/projects";
 import { getProjectBySlug } from "@/lib/projects-source";
+import { techColor } from "@/lib/tech-colors";
 
 interface ProjectDetailProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -76,15 +77,15 @@ export default async function ProjectDetailPage({ params }: ProjectDetailProps) 
           <p className="detail-section text-[15px] leading-8 text-[var(--text-muted)]">{t(project.description, typedLocale)}</p>
 
           <div className="detail-section detail-info-grid">
-            <div>
+            <div className="flex flex-col">
               <h2 className="detail-section-label">{dict.detail.design}</h2>
-              <p className="glass-card mt-3 rounded-2xl p-4 text-sm leading-7 text-[var(--text-muted)]">
+              <p className="glass-card mt-3 flex-1 rounded-2xl p-4 text-sm leading-7 text-[var(--text-muted)]">
                 {t(project.design, typedLocale)}
               </p>
             </div>
-            <div>
+            <div className="flex flex-col">
               <h2 className="detail-section-label">{dict.detail.architecture}</h2>
-              <p className="glass-card mt-3 rounded-2xl p-4 text-sm leading-7 text-[var(--text-muted)]">
+              <p className="glass-card mt-3 flex-1 rounded-2xl p-4 text-sm leading-7 text-[var(--text-muted)]">
                 {t(project.architecture, typedLocale)}
               </p>
             </div>
@@ -94,7 +95,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailProps) 
             <h2 className="detail-section-label">{dict.detail.stack}</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {project.tech.map((item) => (
-                <span key={item} className="project-tech">
+                <span key={item} className="project-tech-badge" style={{ backgroundColor: techColor(item) }}>
                   {item}
                 </span>
               ))}
@@ -122,7 +123,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailProps) 
                   Live
                 </a>
               ) : (
-                <span className="text-sm text-[var(--text-muted)]">{dict.detail.noLive}</span>
+                <span className="rounded-full border border-[var(--line-muted)] bg-[var(--panel-soft)] px-4 py-1.5 text-sm text-[var(--text-soft)] opacity-60">{dict.detail.noLive}</span>
               )}
               {project.videoUrl ? (
                 <a

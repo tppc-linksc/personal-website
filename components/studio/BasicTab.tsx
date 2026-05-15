@@ -81,6 +81,17 @@ export function BasicTab({ draft, onFieldChange }: BasicTabProps) {
           className="w-full rounded-xl border border-[var(--line)] bg-[var(--button-bg)] px-3 py-2 outline-none ring-[var(--accent-border)] focus:ring"
         />
       </label>
+
+      <label className="text-sm md:col-span-2">
+        <div className="mb-1 text-[var(--text-muted)]">项目开始时间</div>
+        <input
+          type="date"
+          value={draft.startDate ?? ""}
+          onChange={(e) => onFieldChange("startDate", e.target.value)}
+          className="w-full rounded-xl border border-[var(--line)] bg-[var(--button-bg)] px-3 py-2 outline-none ring-[var(--accent-border)] focus:ring"
+        />
+        <div className="mt-2 text-xs text-[var(--text-soft)]">用于首页项目路线排序和日期显示</div>
+      </label>
     </div>
   );
 }

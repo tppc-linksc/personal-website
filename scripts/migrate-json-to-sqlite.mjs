@@ -66,6 +66,13 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_rate_limits_key_bucket_created
     ON rate_limits (key, bucket, created_at);
+
+  CREATE TABLE IF NOT EXISTS projects (
+    slug TEXT PRIMARY KEY,
+    data TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
 `);
 
 function migrateRateLimitsSchema() {

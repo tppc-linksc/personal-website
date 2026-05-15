@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Dictionary, Locale } from "@/lib/i18n";
 import { projectYear } from "@/lib/project-selection";
 import { t, type ProjectItem } from "@/lib/projects";
+import { techColor } from "@/lib/tech-colors";
 
 interface ProjectCardProps {
   project: ProjectItem;
@@ -38,7 +39,7 @@ export function ProjectCard({ project, locale, dict }: ProjectCardProps) {
 
           <div className="mt-3 flex flex-wrap gap-2">
             {project.tech.slice(0, 3).map((tech) => (
-              <span key={tech} className="project-tech">
+              <span key={tech} className="project-tech-badge" style={{ backgroundColor: techColor(tech) }}>
                 {tech}
               </span>
             ))}

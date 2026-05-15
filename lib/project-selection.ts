@@ -19,13 +19,13 @@ export function projectYear(project: ProjectItem): string {
 }
 
 export function projectRouteDate(project: ProjectItem): string {
-  const date = project.githubCreatedAt ?? (project.publishedAt ? new Date(project.publishedAt).toISOString() : undefined);
-  if (date) {
+  const raw = project.startDate ?? project.githubCreatedAt ?? (project.publishedAt ? new Date(project.publishedAt).toISOString() : undefined);
+  if (raw) {
     return new Intl.DateTimeFormat("zh-CN", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-    }).format(new Date(date));
+    }).format(new Date(raw));
   }
   if (project.updatedAt) {
     return new Intl.DateTimeFormat("zh-CN", {
@@ -35,6 +35,16 @@ export function projectRouteDate(project: ProjectItem): string {
     }).format(new Date(project.updatedAt));
   }
   return "TBD";
+}
+
+export function sortProjectsByStartDate(projects: ProjectItem[]): ProjectItem[] {
+  return [...projects].sort((a, b) => {
+    const dateA = a.startDate ?? "";
+    const dateB = b.startDate ?? "";
+    const cmp = dateB.localeCompare(dateA);
+    if (cmp !== 0) return cmp;
+    return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
+  });
 }
 
 export function sortProjects(projects: ProjectItem[]): ProjectItem[] {
