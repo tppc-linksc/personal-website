@@ -56,5 +56,6 @@ data/projects-export.json
 data/portfolio.sqlite
 data/portfolio.sqlite-wal
 data/portfolio.sqlite-shm
+data/uploads/
 public/uploads/
 
