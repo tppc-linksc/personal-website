@@ -1,6 +1,6 @@
 import type { Locale } from "@/lib/i18n";
 
-export type ProjectStatus = "live" | "completed" | "in_progress" | "planned";
+export type ProjectStatus = "live" | "completed" | "in_progress" | "planned" | "paused";
 export type ProjectVisibility = "draft" | "published";
 
 export interface LocalizedText {

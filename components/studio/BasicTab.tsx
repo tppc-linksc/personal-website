@@ -30,6 +30,7 @@ export function BasicTab({ draft, onFieldChange }: BasicTabProps) {
           <option value="completed">completed</option>
           <option value="in_progress">in_progress</option>
           <option value="planned">planned</option>
+          <option value="paused">paused</option>
         </select>
       </label>
 

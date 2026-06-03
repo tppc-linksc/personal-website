@@ -177,6 +177,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       completed: "已完成",
       in_progress: "开发中",
       planned: "计划中",
+      paused: "暂停开发",
     },
     detail: {
       back: "返回首页",
@@ -283,6 +284,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       completed: "Completed",
       in_progress: "In Progress",
       planned: "Planned",
+      paused: "Paused",
     },
     detail: {
       back: "Back Home",

@@ -1,6 +1,6 @@
 import type { ProjectItem, ProjectStatus } from "@/lib/projects";
 
-export const projectStatusOrder: ProjectStatus[] = ["live", "completed", "in_progress", "planned"];
+export const projectStatusOrder: ProjectStatus[] = ["live", "completed", "in_progress", "planned", "paused"];
 
 export function projectYear(project: ProjectItem): string {
   if (project.eta) {
