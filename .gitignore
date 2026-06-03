@@ -59,3 +59,6 @@ data/portfolio.sqlite-shm
 data/uploads/
 public/uploads/
 
+# cache
+v&p-cache/
+

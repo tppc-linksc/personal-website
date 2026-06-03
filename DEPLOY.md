@@ -172,7 +172,7 @@ git clone https://github.com/yourusername/your-repo.git /home/website
 cd /home/website
 
 # 方法二：从本地上传（如果 GitHub 下载慢）
-# 本地执行: scp -r ./personal-website root@服务器IP:/home/
+# 本地执行: scp -r ./SS-Page root@服务器IP:/home/
 ```
 
 ### 5.2 配置环境变量
@@ -193,7 +193,7 @@ vim .env
 STUDIO_ADMIN_TOKEN=你的密码
 
 # 必填：生产运行时数据目录（SQLite 数据库会写到这里）
-PORTFOLIO_DATA_DIR=/var/lib/personal-website
+PORTFOLIO_DATA_DIR=/var/lib/SS-Page
 
 # 可选
 STUDIO_OWNER_NAME=你的名字        # 留言作者标识
@@ -206,28 +206,28 @@ STUDIO_SESSION_TTL_SECONDS=259200  # 会话有效期（秒）
 
 ### 5.3 创建运行时数据目录
 
-运行时数据不要放在项目目录里。SQLite 数据库、WAL 文件和后续上传目录统一放到 `/var/lib/personal-website`：
+运行时数据不要放在项目目录里。SQLite 数据库、WAL 文件和后续上传目录统一放到 `/var/lib/SS-Page`：
 
 ```bash
-sudo mkdir -p /var/lib/personal-website/uploads
-sudo chown -R $USER:$USER /var/lib/personal-website
-chmod 700 /var/lib/personal-website
+sudo mkdir -p /var/lib/SS-Page/uploads
+sudo chown -R $USER:$USER /var/lib/SS-Page
+chmod 700 /var/lib/SS-Page
 ```
 
 当前第一阶段运行时数据：
 
 | 数据 | 存储位置 |
 |------|----------|
-| 留言 | `/var/lib/personal-website/portfolio.sqlite` |
-| 访问计数 | `/var/lib/personal-website/portfolio.sqlite` |
-| 首页内容 | `/var/lib/personal-website/portfolio.sqlite` |
-| 限流记录 | `/var/lib/personal-website/portfolio.sqlite` |
+| 留言 | `/var/lib/SS-Page/portfolio.sqlite` |
+| 访问计数 | `/var/lib/SS-Page/portfolio.sqlite` |
+| 首页内容 | `/var/lib/SS-Page/portfolio.sqlite` |
+| 限流记录 | `/var/lib/SS-Page/portfolio.sqlite` |
 
 ### 5.4 安装依赖、构建并迁移数据
 
 ```bash
 # 确保当前 shell 带有生产数据目录
-export PORTFOLIO_DATA_DIR=/var/lib/personal-website
+export PORTFOLIO_DATA_DIR=/var/lib/SS-Page
 
 # 推荐生产使用 npm ci
 npm ci
@@ -240,7 +240,7 @@ node scripts/migrate-json-to-sqlite.mjs
 ### 5.5 配置 nginx 反向代理
 
 ```bash
-vim /etc/nginx/sites-available/personal-website
+vim /etc/nginx/sites-available/SS-Page
 ```
 
 写入：
@@ -250,8 +250,8 @@ server {
     server_name yourdomain.com www.yourdomain.com;
 
     # 日志
-    access_log /var/log/nginx/personal-website-access.log;
-    error_log /var/log/nginx/personal-website-error.log;
+    access_log /var/log/nginx/SS-Page-access.log;
+    error_log /var/log/nginx/SS-Page-error.log;
 
     # 静态资源缓存
     location /_next/static/ {
@@ -280,7 +280,7 @@ server {
 
 启用站点：
 ```bash
-ln -s /etc/nginx/sites-available/personal-website /etc/nginx/sites-enabled/
+ln -s /etc/nginx/sites-available/SS-Page /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 nginx -t
 systemctl reload nginx
@@ -292,10 +292,10 @@ systemctl reload nginx
 cd /home/website
 
 # 确保 PM2 进程继承生产数据目录
-export PORTFOLIO_DATA_DIR=/var/lib/personal-website
+export PORTFOLIO_DATA_DIR=/var/lib/SS-Page
 
 # PM2 启动
-pm2 start npm --name "personal-website" -- start
+pm2 start npm --name "SS-Page" -- start
 
 # 查看状态
 pm2 status
@@ -309,14 +309,14 @@ pm2 save
 ```js
 env: {
   NODE_ENV: "production",
-  PORTFOLIO_DATA_DIR: "/var/lib/personal-website"
+  PORTFOLIO_DATA_DIR: "/var/lib/SS-Page"
 }
 ```
 
 修改环境变量后重启：
 
 ```bash
-pm2 restart personal-website --update-env
+pm2 restart SS-Page --update-env
 pm2 save
 ```
 
@@ -327,8 +327,8 @@ pm2 save
 检查 SQLite：
 
 ```bash
-sqlite3 /var/lib/personal-website/portfolio.sqlite ".tables"
-sqlite3 /var/lib/personal-website/portfolio.sqlite "select * from metrics;"
+sqlite3 /var/lib/SS-Page/portfolio.sqlite ".tables"
+sqlite3 /var/lib/SS-Page/portfolio.sqlite "select * from metrics;"
 ```
 
 ---
@@ -366,7 +366,7 @@ cd /home/website
 git pull
 
 # 重新构建
-export PORTFOLIO_DATA_DIR=/var/lib/personal-website
+export PORTFOLIO_DATA_DIR=/var/lib/SS-Page
 npm ci
 npm run build
 
@@ -374,18 +374,18 @@ npm run build
 node scripts/migrate-json-to-sqlite.mjs
 
 # 重启应用
-pm2 restart personal-website --update-env
+pm2 restart SS-Page --update-env
 ```
 
 ### 7.2 查看日志
 
 ```bash
 # 应用日志
-pm2 logs personal-website
+pm2 logs SS-Page
 
 # nginx 日志
-tail -f /var/log/nginx/personal-website-access.log
-tail -f /var/log/nginx/personal-website-error.log
+tail -f /var/log/nginx/SS-Page-access.log
+tail -f /var/log/nginx/SS-Page-error.log
 ```
 
 ### 7.3 备份数据
@@ -394,15 +394,15 @@ tail -f /var/log/nginx/personal-website-error.log
 
 ```bash
 # 服务器上先生成归档
-tar -czf /tmp/personal-website-data-$(date +%Y%m%d-%H%M%S).tar.gz /var/lib/personal-website
+tar -czf /tmp/SS-Page-data-$(date +%Y%m%d-%H%M%S).tar.gz /var/lib/SS-Page
 
 # 本地拉取备份
-scp root@服务器IP:/tmp/personal-website-data-*.tar.gz ./backup/
+scp root@服务器IP:/tmp/SS-Page-data-*.tar.gz ./backup/
 ```
 
 项目静态数据仍在代码里，尤其是 `lib/projects.ts`，正常通过 Git 管理即可。
 
-上传文件存储在 `/var/lib/personal-website/uploads/`，已包含在上面的数据目录备份中。
+上传文件存储在 `/var/lib/SS-Page/uploads/`，已包含在上面的数据目录备份中。
 
 ### 7.4 添加备案号
 

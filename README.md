@@ -103,7 +103,7 @@ npm run dev
 ## 项目结构
 
 ```
-personal-website/
+SS-Page/
 ├── app/                          # Next.js App Router
 │   ├── [locale]/                 # 国际化路由
 │   │   ├── page.tsx              # 首页
@@ -193,7 +193,7 @@ personal-website/
 
 ### 3. 项目数据源
 
-项目数据存储在本地 TypeScript 文件中（`lib/projects.ts`），无需外部数据库。留言、访问统计、网站内容和限流记录等运行时数据存储在 SQLite 数据库中（默认 `data/portfolio.sqlite`，生产建议 `PORTFOLIO_DATA_DIR=/var/lib/personal-website`），使用 WAL 模式支持并发读写。
+项目数据存储在本地 TypeScript 文件中（`lib/projects.ts`），无需外部数据库。留言、访问统计、网站内容和限流记录等运行时数据存储在 SQLite 数据库中（默认 `data/portfolio.sqlite`，生产建议 `PORTFOLIO_DATA_DIR=/var/lib/SS-Page`），使用 WAL 模式支持并发读写。
 
 ### 3.5 安全机制
 
@@ -321,7 +321,7 @@ npm run test:e2e:ui
 | 限流记录 | SQLite（自动过期清理） | `PORTFOLIO_DATA_DIR/portfolio.sqlite`（默认 `data/portfolio.sqlite`） |
 | 上传图片 | 文件系统（UUID 命名） | `PORTFOLIO_DATA_DIR/uploads/` |
 
-数据可随时备份：代码内静态数据请通过 Git 管理（重点是 `lib/projects.ts`）；运行时数据请备份 `PORTFOLIO_DATA_DIR`（默认 `data/`，生产通常为 `/var/lib/personal-website`）。数据库文件使用 WAL 模式，备份时推荐使用 `sqlite3` 的 `.backup` 命令确保一致性。
+数据可随时备份：代码内静态数据请通过 Git 管理（重点是 `lib/projects.ts`）；运行时数据请备份 `PORTFOLIO_DATA_DIR`（默认 `data/`，生产通常为 `/var/lib/SS-Page`）。数据库文件使用 WAL 模式，备份时推荐使用 `sqlite3` 的 `.backup` 命令确保一致性。
 
 ## 路线图
 
