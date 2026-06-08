@@ -24,8 +24,6 @@ export interface Dictionary {
     name: string;
     role: string;
     summary: string;
-    signalDeckTitle: string;
-    signalDeckHint: string;
     ctaPrimary: string;
     ctaSecondary: string;
     stats: Array<{ label: string; value: string }>;
@@ -46,6 +44,7 @@ export interface Dictionary {
       completed: string;
       in_progress: string;
       planned: string;
+      paused: string;
     };
     viewDetail: string;
     openGithub: string;
@@ -69,6 +68,7 @@ export interface Dictionary {
     completed: string;
     in_progress: string;
     planned: string;
+    paused: string;
   };
   detail: {
     back: string;
@@ -120,8 +120,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
       role: "Vibe Coder & Indie Builder",
       summary:
         "把 AI 编程、产品思维和工程落地融合成一条高速工作流。我的目标是：更快构建、更快验证、更快发布。",
-      signalDeckTitle: "项目总览",
-      signalDeckHint: "按状态查看项目分布与数量。",
       ctaPrimary: "查看项目",
       ctaSecondary: "GitHub",
       stats: [
@@ -154,6 +152,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
         completed: "已完成",
         in_progress: "开发中",
         planned: "计划中",
+        paused: "暂停开发",
       },
       viewDetail: "查看详情",
       openGithub: "源码",
@@ -227,8 +226,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
       role: "Vibe Coder & Indie Builder",
       summary:
         "I merge AI coding, product thinking, and engineering execution into one fast loop: build faster, validate faster, ship faster.",
-      signalDeckTitle: "Project Overview",
-      signalDeckHint: "View project distribution and counts by status.",
       ctaPrimary: "View Projects",
       ctaSecondary: "GitHub",
       stats: [
@@ -261,6 +258,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
         completed: "Completed",
         in_progress: "In Progress",
         planned: "Planned",
+        paused: "Paused",
       },
       viewDetail: "View Details",
       openGithub: "Source",
